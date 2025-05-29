@@ -79,7 +79,7 @@ export default function QuotePreview({ data }: QuotePreviewProps) {
             <img 
               src={logoPath} 
               alt="Logo" 
-              className="w-24 h-24 object-contain" 
+              className="w-32 h-24 object-contain" 
             />
           </div>
           <div className="text-center md:text-right">
