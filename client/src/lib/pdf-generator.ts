@@ -267,7 +267,7 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
     headStyles: {
       fillColor: [59, 130, 246],
       textColor: [255, 255, 255],
-      fontStyle: 'normal',
+      fontStyle: 'bold',
       fontSize: 10,
       halign: 'left', // deixa padrão
     },
@@ -290,7 +290,7 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
       1: { 
         cellWidth: (pageWidth - 2 * margin) * 0.3,
         halign: 'right',
-        fontStyle: 'bold'
+        fontStyle: 'normal'
       }
     },
     didParseCell: function (data) {
