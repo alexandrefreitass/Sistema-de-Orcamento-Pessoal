@@ -203,11 +203,11 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.text(data.equipmentPassword || 'N/A', rightCol, passwordY + 4);
 
   // Calcular altura dinâmica baseada no conteúdo do equipamento
-  const equipmentLines = data.equipmentType.split(' ').length > 3 ? Math.ceil(data.equipmentType.length / 20) : 1;
-  const modelLines = data.equipmentModel.split(' ').length > 3 ? Math.ceil(data.equipmentModel.length / 20) : 1;
-  const accessoriesLines = (data.equipmentAccessories || '').split(' ').length > 3 ? Math.ceil((data.equipmentAccessories || '').length / 20) : 1;
+  const equipmentLinesCount = equipmentLines.length;
+  const modelLinesCount = modelLines.length;
+  const accessoriesLinesCount = accessoriesLines.length;
   
-  const maxLines = Math.max(equipmentLines + modelLines, accessoriesLines + 1);
+  const maxLines = Math.max(equipmentLinesCount + modelLinesCount, accessoriesLinesCount + 1);
   const dynamicHeight = Math.max(35, 16 + (maxLines * 3) + 8);
   
   yPosition += dynamicHeight + 8;
