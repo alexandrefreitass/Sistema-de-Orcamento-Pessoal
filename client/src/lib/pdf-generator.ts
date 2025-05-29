@@ -72,10 +72,10 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.setTextColor(31, 41, 55);
   doc.text(data.date, rightContentX, yPosition + 24, { align: 'right' });
 
-  // WhatsApp com ícone
+  // WhatsApp
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(34, 197, 94);
-  doc.text('📞 ' + formatPhone(data.companyWhatsapp), rightContentX, yPosition + 34, { align: 'right' });
+  doc.text(formatPhone(data.companyWhatsapp), rightContentX, yPosition + 34, { align: 'right' });
 
   // Linha de separação
   yPosition += 40;
@@ -96,7 +96,7 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.setTextColor(31, 41, 55);
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('👤 Dados do Cliente', margin + 5, yPosition + 8);
+  doc.text('Dados do Cliente', margin + 5, yPosition + 8);
   
   // Campos do cliente
   doc.setFontSize(8);
@@ -122,7 +122,7 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.setTextColor(31, 41, 55);
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('💻 Dados do Equipamento', rightSectionX + 5, yPosition + 8);
+  doc.text('Dados do Equipamento', rightSectionX + 5, yPosition + 8);
   
   // Campos do equipamento
   doc.setFontSize(7);
@@ -162,7 +162,7 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.setTextColor(31, 41, 55);
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('🔍 Diagnóstico / Problema', margin, yPosition);
+  doc.text('Diagnóstico / Problema', margin, yPosition);
   yPosition += 8;
 
   // Box do diagnóstico
@@ -178,7 +178,7 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   data.diagnostics.forEach((diagnostic, index) => {
-    doc.text(`⚠️ ${diagnostic}`, margin + 8, yPosition + 6 + (index * 4));
+    doc.text(`• ${diagnostic}`, margin + 8, yPosition + 6 + (index * 4));
   });
 
   yPosition += diagnosticsHeight + 12;
@@ -187,7 +187,7 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.setTextColor(31, 41, 55);
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('🔧 Procedimentos Realizados', margin, yPosition);
+  doc.text('Procedimentos Realizados', margin, yPosition);
   yPosition += 8;
 
   // Tabela de serviços
