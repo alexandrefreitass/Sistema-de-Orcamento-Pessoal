@@ -7,8 +7,8 @@ import type { QuoteFormData } from '@shared/schema';
 export async function generatePDF(data: QuoteFormData): Promise<void> {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
-  const margin = 20;
-  let yPosition = 20;
+  const margin = 8;
+  let yPosition = 8;
 
   // Configurar fonte padrão como helvetica
   doc.setFont('helvetica');
@@ -265,19 +265,19 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
       cellPadding: 2,
     },
     headStyles: {
-      fillColor: [59, 130, 246], // Azul mais suave
+      fillColor: [59, 130, 246],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 10,
-      halign: 'left'
+      halign: 'left', // deixa padrão
     },
     bodyStyles: {
       textColor: [0, 0, 0],
       fillColor: [255, 255, 255]
     },
     footStyles: {
-      fillColor: [248, 250, 252], // Cinza mais claro
-      textColor: [59, 130, 246],
+      fillColor: [255, 255, 255], // branco igual ao restante da tabela
+      textColor: [59, 130, 246],  // mantém azul do TOTAL
       fontStyle: 'bold',
       fontSize: 11,
       halign: 'left'
@@ -288,27 +288,34 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
         halign: 'left'
       },
       1: { 
-        halign: 'right', 
         cellWidth: (pageWidth - 2 * margin) * 0.3,
+        halign: 'right',
         fontStyle: 'bold'
       }
     },
-    didDrawCell: function(data) {
-      // Alinhar cabeçalho "Valor" à direita
+    didParseCell: function (data) {
+      // Alinha o cabeçalho "Valor" à direita
       if (data.section === 'head' && data.column.index === 1) {
         data.cell.styles.halign = 'right';
       }
-      // Alinhar valor total do rodapé à direita
+      // Alinha o valor total à direita
       if (data.section === 'foot' && data.column.index === 1) {
         data.cell.styles.halign = 'right';
+      }
+      // Garante que "Serviço" e "TOTAL" fiquem à esquerda
+      if (data.section === 'head' && data.column.index === 0) {
+        data.cell.styles.halign = 'left';
+      }
+      if (data.section === 'foot' && data.column.index === 0) {
+        data.cell.styles.halign = 'left';
       }
     },
     margin: { left: margin, right: margin },
     alternateRowStyles: {
-      fillColor: [249, 250, 251] // Cinza muito claro
+      fillColor: [249, 250, 251]
     },
-    tableLineColor: [203, 213, 225], // Bordas mais suaves
-    tableLineWidth: 0.2, // Bordas mais finas
+    tableLineColor: [203, 213, 225],
+    tableLineWidth: 0.2,
   });
 
   yPosition = (doc as any).lastAutoTable.finalY + 6;
@@ -322,22 +329,23 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
     yPosition = margin;
   }
 
-  // Seção Garantia
-  const warrantyHeight = 10;
+  // Cálculo correto para centralizar verticalmente:
+  const warrantyHeight = 10; // ou o valor que estiver usando
   doc.setFillColor(254, 240, 138);
   doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, warrantyHeight, 3, 3, 'F');
-  
-  doc.setFontSize(10);
+
+  // Centralizar texto no centro da barra
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
-  doc.text('GARANTIA DE 30 DIAS DOS SERVIÇOS PRESTADOS', pageWidth / 2, yPosition + 7, { align: 'center' });
-  
-  yPosition += warrantyHeight + 6;
+  doc.text(
+    'GARANTIA DE 30 DIAS DOS SERVIÇOS PRESTADOS',
+    pageWidth / 2,
+    yPosition + (warrantyHeight / 2) + 1, // ajuste +1 é suficiente para fonte 8
+    { align: 'center' }
+  );
 
-  // Seções de Assinatura
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(75, 85, 99);
+  yPosition += warrantyHeight + 12; // 12 dá um espaço mais elegante, pode ajustar para mais/menos
   
   const signatureWidth = (pageWidth - 3 * margin) / 2;
   
