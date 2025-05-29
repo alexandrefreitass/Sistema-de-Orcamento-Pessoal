@@ -1,27 +1,28 @@
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { formatCurrency } from './quote-utils';
+import { formatCurrency, formatPhone } from './quote-utils';
 import type { QuoteFormData } from '@shared/schema';
 
 export async function generatePDF(data: QuoteFormData): Promise<void> {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
   const margin = 20;
+  let yPosition = 20;
 
-  // Header
-  doc.setFillColor(29, 78, 216); // Blue color
-  doc.rect(0, 0, pageWidth, 60, 'F');
+  // Header Section with Border
+  doc.setDrawColor(229, 231, 235); // Gray border
+  doc.rect(margin, yPosition, pageWidth - 2 * margin, 50);
   
   // Try to add logo
   try {
     const logoImg = new Image();
     logoImg.crossOrigin = "anonymous";
     
-    await new Promise((resolve, reject) => {
+    await new Promise((resolve) => {
       logoImg.onload = () => {
         try {
-          // Create canvas to convert image
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
           canvas.width = logoImg.width;
@@ -29,151 +30,228 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
           ctx?.drawImage(logoImg, 0, 0);
           
           const logoDataUrl = canvas.toDataURL('image/png');
-          doc.addImage(logoDataUrl, 'PNG', margin, 10, 30, 20);
-          resolve(true);
+          doc.addImage(logoDataUrl, 'PNG', margin + 10, yPosition + 5, 32, 24);
         } catch (err) {
           console.warn('Erro ao processar logo:', err);
-          resolve(true); // Continue without logo
         }
+        resolve(true);
       };
       logoImg.onerror = () => {
-        console.warn('Logo não encontrado, continuando sem logo');
-        resolve(true); // Continue without logo
+        console.warn('Logo não encontrado');
+        resolve(true);
       };
       logoImg.src = '/assets/logo.png';
     });
   } catch (err) {
     console.warn('Erro ao carregar logo:', err);
   }
-  
-  doc.setTextColor(255, 255, 255);
+
+  // Header right side - ORÇAMENTO
+  doc.setTextColor(0, 0, 0);
   doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
-  doc.text('ORÇAMENTO', margin + 35, 25);
+  doc.text('ORÇAMENTO', pageWidth - margin - 10, yPosition + 15, { align: 'right' });
   
-  doc.setFontSize(12);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text('Assistência Técnica - Ordem de Serviço', margin + 35, 35);
-  
-  // Date and Service Order
-  doc.text(`Data: ${data.date}`, pageWidth - 80, 25);
-  doc.text(`OS: ${data.serviceOrder}`, pageWidth - 80, 35);
-  doc.text(`WhatsApp: ${data.companyWhatsapp}`, pageWidth - 80, 45);
-
-  // Reset text color
+  doc.setTextColor(107, 114, 128); // Gray-600
+  doc.text(`Ordem de Serviço: `, pageWidth - margin - 50, yPosition + 25, { align: 'right' });
+  doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
+  doc.text(data.serviceOrder, pageWidth - margin - 10, yPosition + 25, { align: 'right' });
   
-  let yPosition = 80;
-
-  // Client Information
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Dados do Cliente', margin, yPosition);
-  yPosition += 10;
-  
-  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Cliente: ${data.clientName}`, margin, yPosition);
-  doc.text(`Telefone: ${data.clientPhone}`, pageWidth / 2, yPosition);
-  yPosition += 20;
-
-  // Equipment Information
-  doc.setFontSize(14);
+  doc.setTextColor(107, 114, 128);
+  doc.text(`Data: `, pageWidth - margin - 30, yPosition + 32, { align: 'right' });
   doc.setFont('helvetica', 'bold');
-  doc.text('Dados do Equipamento', margin, yPosition);
-  yPosition += 10;
-  
-  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  doc.text(data.date, pageWidth - margin - 10, yPosition + 32, { align: 'right' });
+
+  // WhatsApp with icon
   doc.setFont('helvetica', 'normal');
-  doc.text(`Equipamento: ${data.equipmentType}`, margin, yPosition);
-  yPosition += 6;
-  doc.text(`Modelo: ${data.equipmentModel}`, margin, yPosition);
-  yPosition += 6;
-  doc.text(`Acessórios: ${data.equipmentAccessories}`, margin, yPosition);
-  yPosition += 6;
-  doc.text(`Senha: ${data.equipmentPassword}`, margin, yPosition);
-  yPosition += 20;
+  doc.setTextColor(34, 197, 94); // Green color
+  doc.text(`📞 ${formatPhone(data.companyWhatsapp)}`, pageWidth - margin - 10, yPosition + 42, { align: 'right' });
 
-  // Diagnostics
+  yPosition += 70;
+
+  // Client and Equipment sections side by side
+  const sectionWidth = (pageWidth - 3 * margin) / 2;
+  
+  // Client Data Section (Left)
+  doc.setFillColor(249, 250, 251); // Gray-50 background
+  doc.rect(margin, yPosition, sectionWidth, 50, 'F');
+  doc.setDrawColor(229, 231, 235);
+  doc.rect(margin, yPosition, sectionWidth, 50);
+  
+  doc.setTextColor(31, 41, 55); // Gray-800
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text('Diagnóstico / Problema', margin, yPosition);
-  yPosition += 10;
+  doc.text('👤 Dados do Cliente', margin + 5, yPosition + 10);
   
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(75, 85, 99); // Gray-600
+  doc.text('Cliente:', margin + 5, yPosition + 20);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(17, 24, 39); // Gray-900
+  doc.text(data.clientName, margin + 5, yPosition + 26);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(75, 85, 99);
+  doc.text('Telefone:', margin + 5, yPosition + 35);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(17, 24, 39);
+  doc.text(formatPhone(data.clientPhone), margin + 5, yPosition + 41);
+
+  // Equipment Data Section (Right)
+  const rightSectionX = margin + sectionWidth + 10;
+  doc.setFillColor(249, 250, 251);
+  doc.rect(rightSectionX, yPosition, sectionWidth, 50, 'F');
+  doc.setDrawColor(229, 231, 235);
+  doc.rect(rightSectionX, yPosition, sectionWidth, 50);
+  
+  doc.setTextColor(31, 41, 55);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('💻 Dados do Equipamento', rightSectionX + 5, yPosition + 10);
+  
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(75, 85, 99);
+  doc.text('Equipamento:', rightSectionX + 5, yPosition + 20);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(17, 24, 39);
+  doc.text(data.equipmentType, rightSectionX + 5, yPosition + 26);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(75, 85, 99);
+  doc.text('Modelo:', rightSectionX + 5, yPosition + 32);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(17, 24, 39);
+  doc.text(data.equipmentModel, rightSectionX + 5, yPosition + 38);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(75, 85, 99);
+  doc.text('Acessórios:', rightSectionX + 5, yPosition + 44);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(17, 24, 39);
+  doc.text(data.equipmentAccessories, rightSectionX + 70, yPosition + 44);
+
+  yPosition += 70;
+
+  // Diagnostics Section
+  doc.setTextColor(31, 41, 55);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('🔍 Diagnóstico / Problema', margin, yPosition);
+  yPosition += 10;
+
+  // Red-bordered box for diagnostics
+  const diagnosticsHeight = data.diagnostics.length * 6 + 10;
+  doc.setFillColor(254, 242, 242); // Red-50 background
+  doc.rect(margin, yPosition, pageWidth - 2 * margin, diagnosticsHeight, 'F');
+  doc.setDrawColor(248, 113, 113); // Red-400 border
+  doc.setLineWidth(2);
+  doc.line(margin, yPosition, margin, yPosition + diagnosticsHeight); // Left red border
+  doc.setLineWidth(0.1);
+  doc.setDrawColor(229, 231, 235);
+  doc.rect(margin, yPosition, pageWidth - 2 * margin, diagnosticsHeight);
+
+  doc.setTextColor(55, 65, 81); // Gray-700
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   data.diagnostics.forEach((diagnostic, index) => {
-    doc.text(`• ${diagnostic}`, margin, yPosition);
-    yPosition += 6;
+    doc.text(`⚠️ ${diagnostic}`, margin + 5, yPosition + 8 + (index * 6));
   });
-  yPosition += 10;
 
-  // Services Table
+  yPosition += diagnosticsHeight + 20;
+
+  // Services Section
+  doc.setTextColor(31, 41, 55);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text('Procedimentos Realizados', margin, yPosition);
+  doc.text('🔧 Procedimentos Realizados', margin, yPosition);
   yPosition += 10;
 
+  // Services table with exact styling
   const total = data.services.reduce((sum, service) => sum + service.price, 0);
-
+  
   const tableData = data.services.map(service => [
     service.name,
     formatCurrency(service.price)
   ]);
 
-  tableData.push(['TOTAL', formatCurrency(total)]);
-
   autoTable(doc, {
     startY: yPosition,
     head: [['Serviço', 'Valor']],
     body: tableData,
+    foot: [['TOTAL', formatCurrency(total)]],
     theme: 'grid',
     headStyles: {
-      fillColor: [29, 78, 216],
+      fillColor: [37, 99, 235], // Blue-600
       textColor: [255, 255, 255],
-      fontStyle: 'bold'
+      fontStyle: 'bold',
+      fontSize: 11
+    },
+    bodyStyles: {
+      fontSize: 10,
+      cellPadding: 6
     },
     footStyles: {
-      fillColor: [243, 244, 246],
-      textColor: [0, 0, 0],
-      fontStyle: 'bold'
+      fillColor: [243, 244, 246], // Gray-100
+      textColor: [37, 99, 235], // Blue-600
+      fontStyle: 'bold',
+      fontSize: 12
     },
     columnStyles: {
-      1: { halign: 'right' }
+      0: { cellWidth: (pageWidth - 2 * margin) * 0.7 },
+      1: { halign: 'right', cellWidth: (pageWidth - 2 * margin) * 0.3, fontStyle: 'bold' }
     },
     margin: { left: margin, right: margin },
+    alternateRowStyles: {
+      fillColor: [249, 250, 251] // Gray-50
+    }
   });
 
   yPosition = (doc as any).lastAutoTable.finalY + 20;
 
-  // Warranty
-  doc.setFillColor(254, 240, 138);
-  doc.rect(margin, yPosition, pageWidth - 2 * margin, 20, 'F');
+  // Warranty Section
+  doc.setFillColor(254, 240, 138); // Yellow-200
+  doc.rect(margin, yPosition, pageWidth - 2 * margin, 15, 'F');
+  doc.setDrawColor(217, 119, 6); // Yellow-600 border
+  doc.rect(margin, yPosition, pageWidth - 2 * margin, 15);
   
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('GARANTIA DE 30 DIAS DOS SERVIÇOS PRESTADOS', pageWidth / 2, yPosition + 12, { align: 'center' });
+  doc.setTextColor(0, 0, 0);
+  doc.text('GARANTIA DE 30 DIAS DOS SERVIÇOS PRESTADOS', pageWidth / 2, yPosition + 10, { align: 'center' });
   
-  yPosition += 40;
+  yPosition += 35;
 
-  // Signatures
-  doc.setFontSize(10);
+  // Signatures Section
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
+  doc.setTextColor(75, 85, 99); // Gray-600
   
-  const signatureY = yPosition + 20;
-  doc.line(margin, signatureY, margin + 60, signatureY);
-  doc.line(pageWidth - margin - 60, signatureY, pageWidth - margin, signatureY);
+  const signatureWidth = (pageWidth - 3 * margin) / 2;
   
+  // Technician signature (left)
   doc.text('Assinatura do Técnico:', margin, yPosition);
-  doc.text('Assinatura do Cliente:', pageWidth - margin - 60, yPosition);
-  
+  const techSignatureY = yPosition + 20;
+  doc.line(margin, techSignatureY, margin + signatureWidth, techSignatureY);
   doc.setFont('helvetica', 'bold');
-  doc.text(data.technicianName, margin + 30, signatureY + 10, { align: 'center' });
-  doc.text(data.clientName, pageWidth - margin - 30, signatureY + 10, { align: 'center' });
+  doc.setTextColor(0, 0, 0);
+  doc.text(data.technicianName, margin + signatureWidth / 2, techSignatureY + 8, { align: 'center' });
   
+  // Client signature (right)
+  const clientSignatureX = margin + signatureWidth + 20;
   doc.setFont('helvetica', 'normal');
-  doc.text('Técnico Responsável', margin + 30, signatureY + 16, { align: 'center' });
-  doc.text('Cliente', pageWidth - margin - 30, signatureY + 16, { align: 'center' });
+  doc.setTextColor(75, 85, 99);
+  doc.text('Assinatura do Cliente:', clientSignatureX, yPosition);
+  doc.line(clientSignatureX, techSignatureY, clientSignatureX + signatureWidth, techSignatureY);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 0, 0);
+  doc.text(data.clientName, clientSignatureX + signatureWidth / 2, techSignatureY + 8, { align: 'center' });
 
   // Save the PDF
   doc.save(`Orcamento_${data.serviceOrder}_${data.clientName.replace(/\s+/g, '_')}.pdf`);
