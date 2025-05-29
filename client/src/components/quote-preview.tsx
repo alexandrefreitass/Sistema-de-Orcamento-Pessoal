@@ -200,12 +200,9 @@ export default function QuotePreview({ data }: QuotePreviewProps) {
           </div>
 
           {/* Warranty */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
+          <div className="bg-yellow-50 rounded-lg p-4 mb-8">
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-yellow-500 text-white rounded-full mb-3">
-                <i className="fas fa-shield-alt text-lg"></i>
-              </div>
-              <h4 className="text-lg font-semibold text-yellow-800 mb-2">GARANTIA DE 30 DIAS DOS SERVIÇOS PRESTADOS</h4>
+              <h4 className="text-lg font-semibold text-black-800">GARANTIA DE 30 DIAS DOS SERVIÇOS PRESTADOS</h4>
             </div>
           </div>
 
