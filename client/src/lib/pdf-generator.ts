@@ -267,7 +267,7 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
     headStyles: {
       fillColor: [59, 130, 246],
       textColor: [255, 255, 255],
-      fontStyle: 'bold',
+      fontStyle: 'normal',
       fontSize: 10,
       halign: 'left', // deixa padrão
     },
@@ -345,7 +345,7 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
     { align: 'center' }
   );
 
-  yPosition += warrantyHeight + 12; // 12 dá um espaço mais elegante, pode ajustar para mais/menos
+  yPosition += warrantyHeight + 25; // 12 dá um espaço mais elegante, pode ajustar para mais/menos
   
   const signatureWidth = (pageWidth - 3 * margin) / 2;
   
@@ -355,17 +355,16 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.setDrawColor(209, 213, 219);
   doc.setLineWidth(0.5);
   doc.line(margin, signatureY, margin + signatureWidth, signatureY);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);
   doc.text(data.technicianName, margin + signatureWidth / 2, signatureY + 4, { align: 'center' });
   
   // Assinatura do Cliente
   const clientSignatureX = margin + signatureWidth + 20;
-  doc.setFont('helvetica', 'normal');
   doc.setTextColor(75, 85, 99);
   doc.text('Assinatura do Cliente:', clientSignatureX, yPosition);
   doc.line(clientSignatureX, signatureY, clientSignatureX + signatureWidth, signatureY);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);
   doc.text(data.clientName, clientSignatureX + signatureWidth / 2, signatureY + 4, { align: 'center' });
 
