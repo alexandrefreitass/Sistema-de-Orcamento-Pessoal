@@ -350,6 +350,8 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   const signatureWidth = (pageWidth - 3 * margin) / 2;
   
   // Assinatura do Técnico
+  doc.setTextColor(75, 85, 99);
+  doc.setFont('helvetica', 'normal');
   doc.text('Assinatura do Técnico:', margin, yPosition);
   const signatureY = yPosition + 10;
   doc.setDrawColor(209, 213, 219);
@@ -362,6 +364,7 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   // Assinatura do Cliente
   const clientSignatureX = margin + signatureWidth + 20;
   doc.setTextColor(75, 85, 99);
+  doc.setFont('helvetica', 'normal');
   doc.text('Assinatura do Cliente:', clientSignatureX, yPosition);
   doc.line(clientSignatureX, signatureY, clientSignatureX + signatureWidth, signatureY);
   doc.setFont('helvetica', 'normal');
