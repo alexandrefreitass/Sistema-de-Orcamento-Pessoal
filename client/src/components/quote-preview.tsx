@@ -207,22 +207,16 @@ export default function QuotePreview({ data }: QuotePreviewProps) {
           </div>
 
           {/* Signatures */}
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="text-center">
-              <div className="text-sm text-gray-600 mb-2">Assinatura do Técnico:</div>
-              <div className="border-t-2 border-gray-300 pt-4 mb-2">
-                <div className="h-16 mb-2"></div>
-                <div className="font-semibold text-gray-800">{data.technicianName}</div>
-                <div className="text-sm text-gray-600">Técnico Responsável</div>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Assinatura do Técnico:</p>
+              <div className="signature-area"></div>
+              <p className="text-center mt-2 font-medium">{data.technicianName}</p>
             </div>
-            <div className="text-center">
-              <div className="text-sm text-gray-600 mb-2">Assinatura do Cliente:</div>
-              <div className="border-t-2 border-gray-300 pt-4 mb-2">
-                <div className="h-16 mb-2"></div>
-                <div className="font-semibold text-gray-800">{data.clientName}</div>
-                <div className="text-sm text-gray-600">Cliente</div>
-              </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Assinatura do Cliente:</p>
+              <div className="signature-area"></div>
+              <p className="text-center mt-2 font-medium">{data.clientName}</p>
             </div>
           </div>
         </div>
@@ -231,6 +225,12 @@ export default function QuotePreview({ data }: QuotePreviewProps) {
       {/* Print Styles */}
       <style>
         {`
+          .signature-area {
+            height: 60px;
+            border-bottom: 1px solid #d1d5db;
+            margin-bottom: 8px;
+          }
+          
           @media print {
             body { 
               background: white !important; 
