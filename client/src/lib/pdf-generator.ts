@@ -279,7 +279,8 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
       fillColor: [248, 250, 252], // Cinza mais claro
       textColor: [59, 130, 246],
       fontStyle: 'bold',
-      fontSize: 11
+      fontSize: 11,
+      halign: 'left'
     },
     columnStyles: {
       0: { 
@@ -295,6 +296,10 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
     didDrawCell: function(data) {
       // Alinhar cabeçalho "Valor" à direita
       if (data.section === 'head' && data.column.index === 1) {
+        data.cell.styles.halign = 'right';
+      }
+      // Alinhar valor total do rodapé à direita
+      if (data.section === 'foot' && data.column.index === 1) {
         data.cell.styles.halign = 'right';
       }
     },
