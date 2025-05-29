@@ -4,7 +4,7 @@ import { generatePDF } from "@/lib/pdf-generator";
 import { formatCurrency, formatPhone } from "@/lib/quote-utils";
 import { useToast } from "@/hooks/use-toast";
 import type { QuoteFormData } from "@shared/schema";
-import logoPath from "@assets/Untitled_logo_6_basic-file.png";
+const logoPath = "/assets/logo.png";
 
 interface QuotePreviewProps {
   data: QuoteFormData;
