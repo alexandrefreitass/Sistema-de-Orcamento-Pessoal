@@ -79,9 +79,8 @@ export default function QuotePreview({ data }: QuotePreviewProps) {
             <img 
               src={logoPath} 
               alt="Logo" 
-              className="w-24 h-24 mb-2 object-contain" 
+              className="w-24 h-24 object-contain" 
             />
-            <p className="text-sm text-gray-600">Oasis Tecnologia</p>
           </div>
           <div className="text-center md:text-right">
             <h1 className="text-2xl font-bold text-gray-800">ORÇAMENTO</h1>
