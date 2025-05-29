@@ -7,15 +7,18 @@ import type { QuoteFormData } from '@shared/schema';
 export async function generatePDF(data: QuoteFormData): Promise<void> {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
-  const pageHeight = doc.internal.pageSize.height;
-  const margin = 20;
-  let yPosition = 20;
+  const margin = 15;
+  let yPosition = 15;
 
-  // Header Section with border matching the preview
-  doc.setDrawColor(229, 231, 235); // Gray border
-  doc.rect(margin, yPosition, pageWidth - 2 * margin, 50);
+  // Header Section - replicando exatamente o layout do preview
+  const headerHeight = 45;
   
-  // Try to add logo (left side)
+  // Border around header
+  doc.setDrawColor(229, 231, 235);
+  doc.setLineWidth(0.5);
+  doc.rect(margin, yPosition, pageWidth - 2 * margin, headerHeight);
+  
+  // Logo (lado esquerdo)
   try {
     const logoImg = new Image();
     logoImg.crossOrigin = "anonymous";
@@ -30,157 +33,152 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
           ctx?.drawImage(logoImg, 0, 0);
           
           const logoDataUrl = canvas.toDataURL('image/png');
-          // Logo positioned like in preview (32x24 size, centered in left area)
-          doc.addImage(logoDataUrl, 'PNG', margin + 10, yPosition + 13, 32, 24);
+          // Logo com dimensões exatas do preview: w-32 h-24 = 128x96px = ~32x24mm
+          doc.addImage(logoDataUrl, 'PNG', margin + 5, yPosition + 8, 32, 24);
         } catch (err) {
           console.warn('Erro ao processar logo:', err);
         }
         resolve(true);
       };
-      logoImg.onerror = () => {
-        console.warn('Logo não encontrado');
-        resolve(true);
-      };
+      logoImg.onerror = () => resolve(true);
       logoImg.src = '/assets/logo.png';
     });
   } catch (err) {
     console.warn('Erro ao carregar logo:', err);
   }
 
-  // Header right side - ORÇAMENTO (matching preview layout)
-  doc.setTextColor(31, 41, 55); // Gray-800 like preview
-  doc.setFontSize(24);
+  // Header direito - ORÇAMENTO e informações
+  doc.setTextColor(31, 41, 55); // text-gray-800
+  doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
-  doc.text('ORÇAMENTO', pageWidth - margin - 10, yPosition + 15, { align: 'right' });
+  doc.text('ORÇAMENTO', pageWidth - margin - 5, yPosition + 15, { align: 'right' });
   
-  // Service Order info
-  doc.setFontSize(10);
+  // Ordem de Serviço
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(107, 114, 128); // Gray-600
-  doc.text(`Ordem de Serviço: `, pageWidth - margin - 45, yPosition + 25, { align: 'right' });
+  doc.setTextColor(107, 114, 128); // text-gray-600
+  doc.text('Ordem de Serviço: ', pageWidth - margin - 35, yPosition + 23, { align: 'right' });
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(31, 41, 55);
-  doc.text(data.serviceOrder, pageWidth - margin - 10, yPosition + 25, { align: 'right' });
+  doc.text(data.serviceOrder, pageWidth - margin - 5, yPosition + 23, { align: 'right' });
   
-  // Date info
+  // Data
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(107, 114, 128);
-  doc.text(`Data: `, pageWidth - margin - 25, yPosition + 32, { align: 'right' });
+  doc.text('Data: ', pageWidth - margin - 20, yPosition + 30, { align: 'right' });
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(31, 41, 55);
-  doc.text(data.date, pageWidth - margin - 10, yPosition + 32, { align: 'right' });
+  doc.text(data.date, pageWidth - margin - 5, yPosition + 30, { align: 'right' });
 
-  // WhatsApp with green color and phone icon
+  // WhatsApp
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(34, 197, 94); // Green-600 like preview
-  doc.text(`📞 ${formatPhone(data.companyWhatsapp)}`, pageWidth - margin - 10, yPosition + 42, { align: 'right' });
+  doc.setTextColor(34, 197, 94); // text-green-600
+  doc.text(formatPhone(data.companyWhatsapp), pageWidth - margin - 5, yPosition + 40, { align: 'right' });
 
-  yPosition += 70;
+  yPosition += headerHeight + 15;
 
-  // Client and Equipment sections side by side (matching preview grid)
+  // Seções Cliente e Equipamento lado a lado
   const sectionWidth = (pageWidth - 3 * margin) / 2;
+  const sectionHeight = 40;
   
-  // Client Data Section (Left) - Gray-50 background like preview
-  doc.setFillColor(249, 250, 251); // Gray-50 background
-  doc.roundedRect(margin, yPosition, sectionWidth, 50, 3, 3, 'F');
+  // Seção Cliente (esquerda)
+  doc.setFillColor(249, 250, 251); // bg-gray-50
+  doc.roundedRect(margin, yPosition, sectionWidth, sectionHeight, 3, 3, 'F');
   doc.setDrawColor(229, 231, 235);
-  doc.roundedRect(margin, yPosition, sectionWidth, 50, 3, 3, 'S');
+  doc.roundedRect(margin, yPosition, sectionWidth, sectionHeight, 3, 3, 'S');
   
-  doc.setTextColor(31, 41, 55); // Gray-800
-  doc.setFontSize(12);
+  doc.setTextColor(31, 41, 55); // text-gray-800
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('👤 Dados do Cliente', margin + 5, yPosition + 12);
+  doc.text('Dados do Cliente', margin + 5, yPosition + 8);
   
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(75, 85, 99); // Gray-600
-  doc.text('Cliente:', margin + 5, yPosition + 22);
+  doc.setTextColor(75, 85, 99); // text-gray-600
+  doc.text('Cliente:', margin + 5, yPosition + 16);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(17, 24, 39); // Gray-900
-  doc.text(data.clientName, margin + 5, yPosition + 28);
+  doc.setTextColor(17, 24, 39); // text-gray-900
+  doc.text(data.clientName, margin + 5, yPosition + 21);
   
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(75, 85, 99);
-  doc.text('Telefone:', margin + 5, yPosition + 37);
+  doc.text('Telefone:', margin + 5, yPosition + 29);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(17, 24, 39);
-  doc.text(formatPhone(data.clientPhone), margin + 5, yPosition + 43);
+  doc.text(formatPhone(data.clientPhone), margin + 5, yPosition + 34);
 
-  // Equipment Data Section (Right) - Gray-50 background like preview
+  // Seção Equipamento (direita)
   const rightSectionX = margin + sectionWidth + 10;
   doc.setFillColor(249, 250, 251);
-  doc.roundedRect(rightSectionX, yPosition, sectionWidth, 50, 3, 3, 'F');
+  doc.roundedRect(rightSectionX, yPosition, sectionWidth, sectionHeight, 3, 3, 'F');
   doc.setDrawColor(229, 231, 235);
-  doc.roundedRect(rightSectionX, yPosition, sectionWidth, 50, 3, 3, 'S');
+  doc.roundedRect(rightSectionX, yPosition, sectionWidth, sectionHeight, 3, 3, 'S');
   
   doc.setTextColor(31, 41, 55);
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('💻 Dados do Equipamento', rightSectionX + 5, yPosition + 12);
+  doc.text('Dados do Equipamento', rightSectionX + 5, yPosition + 8);
   
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(75, 85, 99);
-  doc.text('Equipamento:', rightSectionX + 5, yPosition + 22);
+  doc.text('Equipamento:', rightSectionX + 5, yPosition + 16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(17, 24, 39);
-  doc.text(data.equipmentType, rightSectionX + 5, yPosition + 28);
-  
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(75, 85, 99);
-  doc.text('Modelo:', rightSectionX + 5, yPosition + 34);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(17, 24, 39);
-  doc.text(data.equipmentModel, rightSectionX + 5, yPosition + 40);
+  doc.text(data.equipmentType, rightSectionX + 5, yPosition + 21);
   
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(75, 85, 99);
-  doc.text('Acessórios:', rightSectionX + 5, yPosition + 46);
+  doc.text('Modelo:', rightSectionX + 5, yPosition + 26);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(17, 24, 39);
-  // Limit accessories text to fit in the box
-  const accessoriesText = data.equipmentAccessories.length > 25 
-    ? data.equipmentAccessories.substring(0, 25) + '...' 
-    : data.equipmentAccessories;
-  doc.text(accessoriesText, rightSectionX + 35, yPosition + 46);
+  doc.text(data.equipmentModel, rightSectionX + 5, yPosition + 31);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(75, 85, 99);
+  doc.text('Acessorios:', rightSectionX + 5, yPosition + 36);
 
-  yPosition += 70;
+  yPosition += sectionHeight + 15;
 
-  // Diagnostics Section (matching red-50 background from preview)
+  // Seção Diagnóstico
   doc.setTextColor(31, 41, 55);
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('🔍 Diagnóstico / Problema', margin, yPosition);
-  yPosition += 12;
+  doc.text('Diagnostico / Problema', margin, yPosition);
+  yPosition += 8;
 
-  // Red-bordered box for diagnostics (matching preview style)
-  const diagnosticsHeight = Math.max(data.diagnostics.length * 6 + 10, 20);
-  doc.setFillColor(254, 242, 242); // Red-50 background
+  // Box do diagnóstico
+  const diagnosticsHeight = Math.max(data.diagnostics.length * 5 + 8, 15);
+  doc.setFillColor(254, 242, 242); // bg-red-50
   doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, diagnosticsHeight, 3, 3, 'F');
-  doc.setDrawColor(248, 113, 113); // Red-400 border
+  
+  // Borda vermelha esquerda
+  doc.setDrawColor(248, 113, 113); // border-red-400
   doc.setLineWidth(2);
-  doc.line(margin, yPosition, margin, yPosition + diagnosticsHeight); // Left red border
+  doc.line(margin, yPosition, margin, yPosition + diagnosticsHeight);
+  
+  // Borda normal
   doc.setLineWidth(0.5);
   doc.setDrawColor(229, 231, 235);
   doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, diagnosticsHeight, 3, 3, 'S');
 
-  doc.setTextColor(55, 65, 81); // Gray-700
-  doc.setFontSize(10);
+  doc.setTextColor(55, 65, 81); // text-gray-700
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   data.diagnostics.forEach((diagnostic, index) => {
-    doc.text(`⚠️ ${diagnostic}`, margin + 5, yPosition + 10 + (index * 6));
+    doc.text(`• ${diagnostic}`, margin + 5, yPosition + 8 + (index * 5));
   });
 
-  yPosition += diagnosticsHeight + 20;
+  yPosition += diagnosticsHeight + 15;
 
-  // Services Section
+  // Seção Serviços
   doc.setTextColor(31, 41, 55);
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('🔧 Procedimentos Realizados', margin, yPosition);
-  yPosition += 12;
+  doc.text('Procedimentos Realizados', margin, yPosition);
+  yPosition += 8;
 
-  // Services table with exact styling from preview
+  // Tabela de serviços com estilo exato do preview
   const total = data.services.reduce((sum, service) => sum + service.price, 0);
   
   const tableData = data.services.map(service => [
@@ -190,83 +188,93 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
 
   autoTable(doc, {
     startY: yPosition,
-    head: [['Serviço', 'Valor']],
+    head: [['Servico', 'Valor']],
     body: tableData,
     foot: [['TOTAL', formatCurrency(total)]],
     theme: 'grid',
-    tableLineColor: [229, 231, 235], // Gray border
+    tableLineColor: [229, 231, 235],
     tableLineWidth: 0.5,
     headStyles: {
-      fillColor: [37, 99, 235], // Blue-600 matching preview
+      fillColor: [37, 99, 235], // bg-blue-600
       textColor: [255, 255, 255],
       fontStyle: 'bold',
-      fontSize: 11,
-      cellPadding: 6
+      fontSize: 10,
+      cellPadding: 3,
+      halign: 'left'
     },
     bodyStyles: {
-      fontSize: 10,
-      cellPadding: 6,
-      textColor: [0, 0, 0]
+      fontSize: 9,
+      cellPadding: 3,
+      textColor: [0, 0, 0],
+      fillColor: [255, 255, 255]
     },
     footStyles: {
-      fillColor: [243, 244, 246], // Gray-100 matching preview
-      textColor: [37, 99, 235], // Blue-600 matching preview
+      fillColor: [243, 244, 246], // bg-gray-100
+      textColor: [37, 99, 235], // text-blue-600
       fontStyle: 'bold',
-      fontSize: 12,
-      cellPadding: 6
+      fontSize: 11,
+      cellPadding: 3
     },
     columnStyles: {
-      0: { cellWidth: (pageWidth - 2 * margin) * 0.7 },
-      1: { halign: 'right', cellWidth: (pageWidth - 2 * margin) * 0.3, fontStyle: 'bold' }
+      0: { 
+        cellWidth: (pageWidth - 2 * margin) * 0.75,
+        halign: 'left'
+      },
+      1: { 
+        halign: 'right', 
+        cellWidth: (pageWidth - 2 * margin) * 0.25,
+        fontStyle: 'bold'
+      }
     },
     margin: { left: margin, right: margin },
     alternateRowStyles: {
-      fillColor: [249, 250, 251] // Gray-50 for alternating rows
+      fillColor: [249, 250, 251] // bg-gray-50
     }
   });
 
-  yPosition = (doc as any).lastAutoTable.finalY + 20;
+  yPosition = (doc as any).lastAutoTable.finalY + 12;
 
-  // Warranty Section (matching yellow background from preview)
-  doc.setFillColor(254, 240, 138); // Yellow-200 matching preview
-  doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, 16, 3, 3, 'F');
-  doc.setDrawColor(217, 119, 6); // Yellow-600 border
-  doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, 16, 3, 3, 'S');
+  // Seção Garantia - exatamente como no preview
+  const warrantyHeight = 12;
+  doc.setFillColor(254, 240, 138); // bg-yellow-50
+  doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, warrantyHeight, 3, 3, 'F');
+  doc.setDrawColor(217, 119, 6);
+  doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, warrantyHeight, 3, 3, 'S');
   
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
-  doc.text('GARANTIA DE 30 DIAS DOS SERVIÇOS PRESTADOS', pageWidth / 2, yPosition + 10, { align: 'center' });
+  doc.text('GARANTIA DE 30 DIAS DOS SERVICOS PRESTADOS', pageWidth / 2, yPosition + 8, { align: 'center' });
   
-  yPosition += 35;
+  yPosition += warrantyHeight + 15;
 
-  // Signatures Section (matching preview layout)
-  doc.setFontSize(9);
+  // Seções de Assinatura
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(75, 85, 99); // Gray-600
+  doc.setTextColor(75, 85, 99);
   
   const signatureWidth = (pageWidth - 3 * margin) / 2;
   
-  // Technician signature (left)
-  doc.text('Assinatura do Técnico:', margin, yPosition);
-  const techSignatureY = yPosition + 20;
-  doc.setDrawColor(209, 213, 219); // Gray-300 line
-  doc.line(margin, techSignatureY, margin + signatureWidth, techSignatureY);
+  // Assinatura do Técnico (esquerda)
+  doc.text('Assinatura do Tecnico:', margin, yPosition);
+  const signatureY = yPosition + 15;
+  doc.setDrawColor(209, 213, 219);
+  doc.line(margin, signatureY, margin + signatureWidth, signatureY);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
-  doc.text(data.technicianName, margin + signatureWidth / 2, techSignatureY + 8, { align: 'center' });
+  doc.text(data.technicianName, margin + signatureWidth / 2, signatureY + 6, { align: 'center' });
   
-  // Client signature (right)
+  // Assinatura do Cliente (direita)
   const clientSignatureX = margin + signatureWidth + 20;
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(75, 85, 99);
   doc.text('Assinatura do Cliente:', clientSignatureX, yPosition);
   doc.setDrawColor(209, 213, 219);
-  doc.line(clientSignatureX, techSignatureY, clientSignatureX + signatureWidth, techSignatureY);
+  doc.line(clientSignatureX, signatureY, clientSignatureX + signatureWidth, signatureY);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
-  doc.text(data.clientName, clientSignatureX + signatureWidth / 2, techSignatureY + 8, { align: 'center' });
+  doc.text(data.clientName, clientSignatureX + signatureWidth / 2, signatureY + 6, { align: 'center' });
 
-  // Save the PDF
+  // Salvar o PDF
   doc.save(`Orcamento_${data.serviceOrder}_${data.clientName.replace(/\s+/g, '_')}.pdf`);
 }
