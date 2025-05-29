@@ -7,16 +7,18 @@ import type { QuoteFormData } from '@shared/schema';
 export async function generatePDF(data: QuoteFormData): Promise<void> {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
-  const margin = 20;
-  let yPosition = 20;
-
-  // Configurar fonte padrão como helvetica (mais próxima do sistema)
-  doc.setFont('helvetica');
+  const margin = 15;
+  let yPosition = 15;
 
   // Header Section - replicando exatamente o layout do preview
-  const headerStartY = yPosition;
+  const headerHeight = 45;
   
-  // Logo (lado esquerdo) - sem border em volta como no preview
+  // Border around header
+  doc.setDrawColor(229, 231, 235);
+  doc.setLineWidth(0.5);
+  doc.rect(margin, yPosition, pageWidth - 2 * margin, headerHeight);
+  
+  // Logo (lado esquerdo)
   try {
     const logoImg = new Image();
     logoImg.crossOrigin = "anonymous";
@@ -31,8 +33,8 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
           ctx?.drawImage(logoImg, 0, 0);
           
           const logoDataUrl = canvas.toDataURL('image/png');
-          // Logo com proporção correta: w-32 h-24 object-contain
-          doc.addImage(logoDataUrl, 'PNG', margin, yPosition, 32, 24);
+          // Logo com dimensões exatas do preview: w-32 h-24 = 128x96px = ~32x24mm
+          doc.addImage(logoDataUrl, 'PNG', margin + 5, yPosition + 8, 32, 24);
         } catch (err) {
           console.warn('Erro ao processar logo:', err);
         }
@@ -45,159 +47,138 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
     console.warn('Erro ao carregar logo:', err);
   }
 
-  // Header direito - ORÇAMENTO e informações (seguindo o layout exato)
-  const rightContentX = pageWidth - margin;
-  
-  // ORÇAMENTO - text-2xl font-bold text-gray-800
+  // Header direito - ORÇAMENTO e informações
   doc.setTextColor(31, 41, 55); // text-gray-800
-  doc.setFontSize(18);
+  doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
-  doc.text('ORÇAMENTO', rightContentX, yPosition + 8, { align: 'right' });
+  doc.text('ORÇAMENTO', pageWidth - margin - 5, yPosition + 15, { align: 'right' });
   
-  // Ordem de Serviço - text-gray-600 com span font-semibold
-  doc.setFontSize(10);
+  // Ordem de Serviço
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(107, 114, 128); // text-gray-600
-  const osText = 'Ordem de Serviço: ';
-  const osWidth = doc.getTextWidth(osText);
-  doc.text(osText, rightContentX - osWidth - doc.getTextWidth(data.serviceOrder), yPosition + 16);
+  doc.text('Ordem de Serviço: ', pageWidth - margin - 35, yPosition + 23, { align: 'right' });
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(31, 41, 55);
-  doc.text(data.serviceOrder, rightContentX, yPosition + 16, { align: 'right' });
+  doc.text(data.serviceOrder, pageWidth - margin - 5, yPosition + 23, { align: 'right' });
   
-  // Data - mesmo padrão
+  // Data
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(107, 114, 128);
-  const dateText = 'Data: ';
-  const dateWidth = doc.getTextWidth(dateText);
-  doc.text(dateText, rightContentX - dateWidth - doc.getTextWidth(data.date), yPosition + 24);
+  doc.text('Data: ', pageWidth - margin - 20, yPosition + 30, { align: 'right' });
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(31, 41, 55);
-  doc.text(data.date, rightContentX, yPosition + 24, { align: 'right' });
+  doc.text(data.date, pageWidth - margin - 5, yPosition + 30, { align: 'right' });
 
-  // WhatsApp com ícone (simulando o SVG com texto)
+  // WhatsApp
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(34, 197, 94); // text-green-600
-  doc.text('📞 ' + formatPhone(data.companyWhatsapp), rightContentX, yPosition + 34, { align: 'right' });
+  doc.text(formatPhone(data.companyWhatsapp), pageWidth - margin - 5, yPosition + 40, { align: 'right' });
 
-  // Linha de separação (border-b pb-6 do preview)
-  yPosition += 40;
-  doc.setDrawColor(229, 231, 235); // border-gray-200
-  doc.setLineWidth(0.5);
-  doc.line(margin, yPosition, pageWidth - margin, yPosition);
-  
-  yPosition += 12; // espaçamento após a linha (mb-8 do preview = 32px ≈ 12pt)
+  yPosition += headerHeight + 15;
 
-  // Seções Cliente e Equipamento lado a lado (grid md:grid-cols-2 gap-8)
+  // Seções Cliente e Equipamento lado a lado
   const sectionWidth = (pageWidth - 3 * margin) / 2;
-  const sectionGap = 15; // gap-8 ≈ 15pt
+  const sectionHeight = 40;
   
-  // Seção Cliente (bg-gray-50 rounded-lg p-6)
+  // Seção Cliente (esquerda)
   doc.setFillColor(249, 250, 251); // bg-gray-50
-  doc.roundedRect(margin, yPosition, sectionWidth, 35, 3, 3, 'F');
+  doc.roundedRect(margin, yPosition, sectionWidth, sectionHeight, 3, 3, 'F');
+  doc.setDrawColor(229, 231, 235);
+  doc.roundedRect(margin, yPosition, sectionWidth, sectionHeight, 3, 3, 'S');
   
-  // Título da seção (text-lg font-semibold text-gray-800 mb-4)
   doc.setTextColor(31, 41, 55); // text-gray-800
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('👤 Dados do Cliente', margin + 5, yPosition + 8);
+  doc.text('Dados do Cliente', margin + 5, yPosition + 8);
   
-  // Campos do cliente (space-y-3)
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(75, 85, 99); // text-gray-600 (text-sm font-medium)
+  doc.setTextColor(75, 85, 99); // text-gray-600
   doc.text('Cliente:', margin + 5, yPosition + 16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(17, 24, 39); // text-gray-900
-  doc.text(data.clientName, margin + 5, yPosition + 20);
+  doc.text(data.clientName, margin + 5, yPosition + 21);
   
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(75, 85, 99);
-  doc.text('Telefone:', margin + 5, yPosition + 27);
+  doc.text('Telefone:', margin + 5, yPosition + 29);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(17, 24, 39);
-  doc.text(formatPhone(data.clientPhone), margin + 5, yPosition + 31);
+  doc.text(formatPhone(data.clientPhone), margin + 5, yPosition + 34);
 
-  // Seção Equipamento (mesma estrutura)
-  const rightSectionX = margin + sectionWidth + sectionGap;
+  // Seção Equipamento (direita)
+  const rightSectionX = margin + sectionWidth + 10;
   doc.setFillColor(249, 250, 251);
-  doc.roundedRect(rightSectionX, yPosition, sectionWidth, 35, 3, 3, 'F');
+  doc.roundedRect(rightSectionX, yPosition, sectionWidth, sectionHeight, 3, 3, 'F');
+  doc.setDrawColor(229, 231, 235);
+  doc.roundedRect(rightSectionX, yPosition, sectionWidth, sectionHeight, 3, 3, 'S');
   
   doc.setTextColor(31, 41, 55);
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('💻 Dados do Equipamento', rightSectionX + 5, yPosition + 8);
+  doc.text('Dados do Equipamento', rightSectionX + 5, yPosition + 8);
   
-  // Campos do equipamento em duas colunas para caber
-  doc.setFontSize(7);
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(75, 85, 99);
-  
-  // Coluna esquerda
   doc.text('Equipamento:', rightSectionX + 5, yPosition + 16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(17, 24, 39);
-  doc.text(data.equipmentType.substring(0, 15) + '...', rightSectionX + 5, yPosition + 20);
+  doc.text(data.equipmentType, rightSectionX + 5, yPosition + 21);
   
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(75, 85, 99);
-  doc.text('Modelo:', rightSectionX + 5, yPosition + 27);
+  doc.text('Modelo:', rightSectionX + 5, yPosition + 26);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(17, 24, 39);
-  doc.text(data.equipmentModel.substring(0, 15) + '...', rightSectionX + 5, yPosition + 31);
-  
-  // Coluna direita
-  const rightCol = rightSectionX + sectionWidth/2 + 5;
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(75, 85, 99);
-  doc.text('Acessórios:', rightCol, yPosition + 16);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(17, 24, 39);
-  doc.text(data.equipmentAccessories.substring(0, 12) + '...', rightCol, yPosition + 20);
+  doc.text(data.equipmentModel, rightSectionX + 5, yPosition + 31);
   
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(75, 85, 99);
-  doc.text('Senha:', rightCol, yPosition + 27);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(17, 24, 39);
-  doc.text(data.equipmentPassword || 'N/A', rightCol, yPosition + 31);
+  doc.text('Acessorios:', rightSectionX + 5, yPosition + 36);
 
-  yPosition += 35 + 12; // altura da seção + mb-8
+  yPosition += sectionHeight + 15;
 
-  // Seção Diagnóstico (mesma estrutura do preview)
+  // Seção Diagnóstico
   doc.setTextColor(31, 41, 55);
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('🔍 Diagnóstico / Problema', margin, yPosition);
+  doc.text('Diagnostico / Problema', margin, yPosition);
   yPosition += 8;
 
-  // Box do diagnóstico (bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg)
-  const diagnosticsHeight = Math.max(data.diagnostics.length * 4 + 8, 15);
+  // Box do diagnóstico
+  const diagnosticsHeight = Math.max(data.diagnostics.length * 5 + 8, 15);
   doc.setFillColor(254, 242, 242); // bg-red-50
-  doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, diagnosticsHeight, 0, 3, 'F');
+  doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, diagnosticsHeight, 3, 3, 'F');
   
-  // Borda vermelha esquerda (border-l-4 border-red-400)
-  doc.setFillColor(248, 113, 113); // border-red-400
-  doc.rect(margin, yPosition, 2, diagnosticsHeight, 'F');
+  // Borda vermelha esquerda
+  doc.setDrawColor(248, 113, 113); // border-red-400
+  doc.setLineWidth(2);
+  doc.line(margin, yPosition, margin, yPosition + diagnosticsHeight);
+  
+  // Borda normal
+  doc.setLineWidth(0.5);
+  doc.setDrawColor(229, 231, 235);
+  doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, diagnosticsHeight, 3, 3, 'S');
 
-  // Conteúdo do diagnóstico
   doc.setTextColor(55, 65, 81); // text-gray-700
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   data.diagnostics.forEach((diagnostic, index) => {
-    doc.text(`⚠️ ${diagnostic}`, margin + 8, yPosition + 6 + (index * 4));
+    doc.text(`• ${diagnostic}`, margin + 5, yPosition + 8 + (index * 5));
   });
 
-  yPosition += diagnosticsHeight + 12;
+  yPosition += diagnosticsHeight + 15;
 
   // Seção Serviços
   doc.setTextColor(31, 41, 55);
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('🔧 Procedimentos Realizados', margin, yPosition);
+  doc.text('Procedimentos Realizados', margin, yPosition);
   yPosition += 8;
 
-  // Tabela de serviços seguindo exatamente o estilo do preview
+  // Tabela de serviços com estilo exato do preview
   const total = data.services.reduce((sum, service) => sum + service.price, 0);
   
   const tableData = data.services.map(service => [
@@ -207,23 +188,23 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
 
   autoTable(doc, {
     startY: yPosition,
-    head: [['Serviço', 'Valor']], // Corrigindo "Servico" para "Serviço"
+    head: [['Servico', 'Valor']],
     body: tableData,
     foot: [['TOTAL', formatCurrency(total)]],
     theme: 'grid',
-    styles: {
-      font: 'helvetica',
-      fontSize: 9,
-      cellPadding: 2, // Reduzindo padding da tabela (py-4 px-6 = 2pt)
-    },
+    tableLineColor: [229, 231, 235],
+    tableLineWidth: 0.5,
     headStyles: {
       fillColor: [37, 99, 235], // bg-blue-600
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 10,
+      cellPadding: 3,
       halign: 'left'
     },
     bodyStyles: {
+      fontSize: 9,
+      cellPadding: 3,
       textColor: [0, 0, 0],
       fillColor: [255, 255, 255]
     },
@@ -231,68 +212,68 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
       fillColor: [243, 244, 246], // bg-gray-100
       textColor: [37, 99, 235], // text-blue-600
       fontStyle: 'bold',
-      fontSize: 11
+      fontSize: 11,
+      cellPadding: 3
     },
     columnStyles: {
       0: { 
-        cellWidth: (pageWidth - 2 * margin) * 0.7,
+        cellWidth: (pageWidth - 2 * margin) * 0.75,
         halign: 'left'
       },
       1: { 
         halign: 'right', 
-        cellWidth: (pageWidth - 2 * margin) * 0.3,
+        cellWidth: (pageWidth - 2 * margin) * 0.25,
         fontStyle: 'bold'
       }
     },
     margin: { left: margin, right: margin },
     alternateRowStyles: {
-      fillColor: [249, 250, 251] // hover:bg-gray-50
-    },
-    tableLineColor: [229, 231, 235],
-    tableLineWidth: 0.3
+      fillColor: [249, 250, 251] // bg-gray-50
+    }
   });
 
   yPosition = (doc as any).lastAutoTable.finalY + 12;
 
-  // Seção Garantia (bg-yellow-50 rounded-lg p-4 - SEM border amarelo)
+  // Seção Garantia - exatamente como no preview
   const warrantyHeight = 12;
   doc.setFillColor(254, 240, 138); // bg-yellow-50
   doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, warrantyHeight, 3, 3, 'F');
+  doc.setDrawColor(217, 119, 6);
+  doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, warrantyHeight, 3, 3, 'S');
   
-  // Texto centralizado (text-center)
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 0, 0); // text-black-800
-  doc.text('GARANTIA DE 30 DIAS DOS SERVIÇOS PRESTADOS', pageWidth / 2, yPosition + 8, { align: 'center' });
+  doc.setTextColor(0, 0, 0);
+  doc.text('GARANTIA DE 30 DIAS DOS SERVICOS PRESTADOS', pageWidth / 2, yPosition + 8, { align: 'center' });
   
   yPosition += warrantyHeight + 15;
 
-  // Seções de Assinatura (grid grid-cols-1 md:grid-cols-2 gap-8)
+  // Seções de Assinatura
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(75, 85, 99); // text-gray-600
+  doc.setTextColor(75, 85, 99);
   
   const signatureWidth = (pageWidth - 3 * margin) / 2;
   
-  // Assinatura do Técnico
-  doc.text('Assinatura do Técnico:', margin, yPosition);
-  const signatureY = yPosition + 12;
-  doc.setDrawColor(209, 213, 219); // border color do signature-area
-  doc.setLineWidth(0.5);
+  // Assinatura do Técnico (esquerda)
+  doc.text('Assinatura do Tecnico:', margin, yPosition);
+  const signatureY = yPosition + 15;
+  doc.setDrawColor(209, 213, 219);
   doc.line(margin, signatureY, margin + signatureWidth, signatureY);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
-  doc.text(data.technicianName, margin + signatureWidth / 2, signatureY + 5, { align: 'center' });
+  doc.text(data.technicianName, margin + signatureWidth / 2, signatureY + 6, { align: 'center' });
   
-  // Assinatura do Cliente
+  // Assinatura do Cliente (direita)
   const clientSignatureX = margin + signatureWidth + 20;
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(75, 85, 99);
   doc.text('Assinatura do Cliente:', clientSignatureX, yPosition);
+  doc.setDrawColor(209, 213, 219);
   doc.line(clientSignatureX, signatureY, clientSignatureX + signatureWidth, signatureY);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
-  doc.text(data.clientName, clientSignatureX + signatureWidth / 2, signatureY + 5, { align: 'center' });
+  doc.text(data.clientName, clientSignatureX + signatureWidth / 2, signatureY + 6, { align: 'center' });
 
   // Salvar o PDF
   doc.save(`Orcamento_${data.serviceOrder}_${data.clientName.replace(/\s+/g, '_')}.pdf`);
