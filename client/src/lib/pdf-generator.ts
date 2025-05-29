@@ -124,63 +124,100 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.setFont('helvetica', 'bold');
   doc.text('Dados do Equipamento', rightSectionX + 5, yPosition + 8);
   
-  // Função para truncar texto adequadamente
-  function truncateText(text: string, maxWidth: number, fontSize: number): string {
+  // Função para quebrar texto em múltiplas linhas
+  function wrapText(text: string, maxWidth: number, fontSize: number): string[] {
     doc.setFontSize(fontSize);
-    const textWidth = doc.getTextWidth(text);
-    if (textWidth <= maxWidth) {
-      return text;
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+    
+    for (const word of words) {
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      const testWidth = doc.getTextWidth(testLine);
+      
+      if (testWidth <= maxWidth) {
+        currentLine = testLine;
+      } else {
+        if (currentLine) {
+          lines.push(currentLine);
+          currentLine = word;
+        } else {
+          lines.push(word);
+        }
+      }
     }
     
-    let truncated = text;
-    while (doc.getTextWidth(truncated + '...') > maxWidth && truncated.length > 0) {
-      truncated = truncated.slice(0, -1);
+    if (currentLine) {
+      lines.push(currentLine);
     }
-    return truncated + '...';
+    
+    return lines;
   }
   
-  // Campos do equipamento com truncamento adequado
+  // Campos do equipamento com quebra de linha adequada
   const fieldWidth = (sectionWidth - 10) / 2 - 5;
   
   doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(75, 85, 99);
   
+  // Equipamento
   doc.text('Equipamento:', rightSectionX + 5, yPosition + 16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(17, 24, 39);
-  doc.text(truncateText(data.equipmentType, fieldWidth, 7), rightSectionX + 5, yPosition + 20);
+  const equipmentLines = wrapText(data.equipmentType, fieldWidth, 7);
+  equipmentLines.forEach((line, index) => {
+    doc.text(line, rightSectionX + 5, yPosition + 20 + (index * 3));
+  });
   
+  // Modelo
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(75, 85, 99);
-  doc.text('Modelo:', rightSectionX + 5, yPosition + 27);
+  const modelY = yPosition + 20 + (equipmentLines.length * 3) + 3;
+  doc.text('Modelo:', rightSectionX + 5, modelY);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(17, 24, 39);
-  doc.text(truncateText(data.equipmentModel, fieldWidth, 7), rightSectionX + 5, yPosition + 31);
+  const modelLines = wrapText(data.equipmentModel, fieldWidth, 7);
+  modelLines.forEach((line, index) => {
+    doc.text(line, rightSectionX + 5, modelY + 4 + (index * 3));
+  });
   
+  // Coluna direita
   const rightCol = rightSectionX + sectionWidth/2 + 5;
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(75, 85, 99);
   doc.text('Acessórios:', rightCol, yPosition + 16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(17, 24, 39);
-  doc.text(truncateText(data.equipmentAccessories || 'N/A', fieldWidth, 7), rightCol, yPosition + 20);
+  const accessoriesLines = wrapText(data.equipmentAccessories || 'N/A', fieldWidth, 7);
+  accessoriesLines.forEach((line, index) => {
+    doc.text(line, rightCol, yPosition + 20 + (index * 3));
+  });
   
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(75, 85, 99);
-  doc.text('Senha:', rightCol, yPosition + 27);
+  const passwordY = yPosition + 20 + (accessoriesLines.length * 3) + 3;
+  doc.text('Senha:', rightCol, passwordY);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(17, 24, 39);
-  doc.text(data.equipmentPassword || 'N/A', rightCol, yPosition + 31);
+  doc.text(data.equipmentPassword || 'N/A', rightCol, passwordY + 4);
 
-  yPosition += 35 + 10;
+  // Calcular altura dinâmica baseada no conteúdo do equipamento
+  const equipmentLines = data.equipmentType.split(' ').length > 3 ? Math.ceil(data.equipmentType.length / 20) : 1;
+  const modelLines = data.equipmentModel.split(' ').length > 3 ? Math.ceil(data.equipmentModel.length / 20) : 1;
+  const accessoriesLines = (data.equipmentAccessories || '').split(' ').length > 3 ? Math.ceil((data.equipmentAccessories || '').length / 20) : 1;
+  
+  const maxLines = Math.max(equipmentLines + modelLines, accessoriesLines + 1);
+  const dynamicHeight = Math.max(35, 16 + (maxLines * 3) + 8);
+  
+  yPosition += dynamicHeight + 8;
 
   // Seção Diagnóstico
   doc.setTextColor(31, 41, 55);
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.text('Diagnóstico / Problema', margin, yPosition);
-  yPosition += 8;
+  yPosition += 6;
 
   // Box do diagnóstico - barra vermelha mais estreita
   const diagnosticsHeight = Math.max(data.diagnostics.length * 4 + 8, 15);
@@ -199,14 +236,14 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
     doc.text(diagnostic, margin + 6, yPosition + 6 + (index * 4));
   });
 
-  yPosition += diagnosticsHeight + 10;
+  yPosition += diagnosticsHeight + 8;
 
   // Seção Serviços
   doc.setTextColor(31, 41, 55);
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.text('Procedimentos Realizados', margin, yPosition);
-  yPosition += 8;
+  yPosition += 6;
 
   // Tabela de serviços - com bordas suaves e cores mais leves
   const total = data.services.reduce((sum, service) => sum + service.price, 0);
@@ -225,13 +262,14 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
     styles: {
       font: 'helvetica',
       fontSize: 9,
-      cellPadding: 3,
+      cellPadding: 2,
     },
     headStyles: {
       fillColor: [59, 130, 246], // Azul mais suave
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 10,
+      halign: 'left'
     },
     bodyStyles: {
       textColor: [0, 0, 0],
@@ -254,37 +292,42 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
         fontStyle: 'bold'
       }
     },
+    didDrawCell: function(data) {
+      // Alinhar cabeçalho "Valor" à direita
+      if (data.section === 'head' && data.column.index === 1) {
+        data.cell.styles.halign = 'right';
+      }
+    },
     margin: { left: margin, right: margin },
     alternateRowStyles: {
       fillColor: [249, 250, 251] // Cinza muito claro
     },
     tableLineColor: [203, 213, 225], // Bordas mais suaves
     tableLineWidth: 0.2, // Bordas mais finas
-    didDrawPage: function(data) {
-      // Adicionar bordas arredondadas manualmente se possível
-    }
   });
 
-  yPosition = (doc as any).lastAutoTable.finalY + 10;
+  yPosition = (doc as any).lastAutoTable.finalY + 6;
 
-  // Seção Garantia
-  const warrantyHeight = 12;
-  doc.setFillColor(254, 240, 138);
-  doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, warrantyHeight, 3, 3, 'F');
-  
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(0, 0, 0);
-  doc.text('GARANTIA DE 30 DIAS DOS SERVIÇOS PRESTADOS', pageWidth / 2, yPosition + 8, { align: 'center' });
-  
-  yPosition += warrantyHeight + 10;
-
-  // Verificar se há espaço suficiente para as assinaturas
+  // Verificar se há espaço suficiente para garantia e assinaturas
   const remainingSpace = doc.internal.pageSize.height - yPosition - margin;
-  if (remainingSpace < 25) {
+  const neededSpace = 12 + 6 + 25; // garantia + espaço + assinaturas
+  
+  if (remainingSpace < neededSpace) {
     doc.addPage();
     yPosition = margin;
   }
+
+  // Seção Garantia
+  const warrantyHeight = 10;
+  doc.setFillColor(254, 240, 138);
+  doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, warrantyHeight, 3, 3, 'F');
+  
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 0, 0);
+  doc.text('GARANTIA DE 30 DIAS DOS SERVIÇOS PRESTADOS', pageWidth / 2, yPosition + 7, { align: 'center' });
+  
+  yPosition += warrantyHeight + 6;
 
   // Seções de Assinatura
   doc.setFontSize(8);
@@ -295,13 +338,13 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   
   // Assinatura do Técnico
   doc.text('Assinatura do Técnico:', margin, yPosition);
-  const signatureY = yPosition + 12;
+  const signatureY = yPosition + 10;
   doc.setDrawColor(209, 213, 219);
   doc.setLineWidth(0.5);
   doc.line(margin, signatureY, margin + signatureWidth, signatureY);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
-  doc.text(data.technicianName, margin + signatureWidth / 2, signatureY + 5, { align: 'center' });
+  doc.text(data.technicianName, margin + signatureWidth / 2, signatureY + 4, { align: 'center' });
   
   // Assinatura do Cliente
   const clientSignatureX = margin + signatureWidth + 20;
@@ -311,7 +354,7 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.line(clientSignatureX, signatureY, clientSignatureX + signatureWidth, signatureY);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 0, 0);
-  doc.text(data.clientName, clientSignatureX + signatureWidth / 2, signatureY + 5, { align: 'center' });
+  doc.text(data.clientName, clientSignatureX + signatureWidth / 2, signatureY + 4, { align: 'center' });
 
   // Salvar o PDF
   doc.save(`Orcamento_${data.serviceOrder}_${data.clientName.replace(/\s+/g, '_')}.pdf`);
