@@ -1,4 +1,4 @@
-import { quotes, type Quote, type InsertQuote, type QuoteFormData } from "@shared/schema";
+import { quotes, savedQuotes, type Quote, type SavedQuote, type InsertQuote, type QuoteFormData, type SavedQuoteFormData } from "@shared/schema";
 
 export interface IStorage {
   createQuote(quoteData: QuoteFormData): Promise<Quote>;
@@ -6,15 +6,22 @@ export interface IStorage {
   getAllQuotes(): Promise<Quote[]>;
   updateQuote(id: number, quoteData: Partial<QuoteFormData>): Promise<Quote | undefined>;
   deleteQuote(id: number): Promise<boolean>;
+  createSavedQuote(savedQuoteData: SavedQuoteFormData): Promise<SavedQuote>;
+  getAllSavedQuotes(): Promise<SavedQuote[]>;
+  deleteSavedQuote(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
   private quotes: Map<number, Quote>;
+  private savedQuotes: Map<number, SavedQuote>;
   private currentId: number;
+  private currentSavedId: number;
 
   constructor() {
     this.quotes = new Map();
+    this.savedQuotes = new Map();
     this.currentId = 1;
+    this.currentSavedId = 1;
   }
 
   async createQuote(quoteData: QuoteFormData): Promise<Quote> {
@@ -71,6 +78,37 @@ export class MemStorage implements IStorage {
 
   async deleteQuote(id: number): Promise<boolean> {
     return this.quotes.delete(id);
+  }
+
+  async createSavedQuote(savedQuoteData: SavedQuoteFormData): Promise<SavedQuote> {
+    const savedQuote: SavedQuote = {
+      id: this.currentSavedId++,
+      name: savedQuoteData.name,
+      serviceOrder: savedQuoteData.serviceOrder,
+      date: savedQuoteData.date,
+      companyWhatsapp: savedQuoteData.companyWhatsapp,
+      clientName: savedQuoteData.clientName,
+      clientPhone: savedQuoteData.clientPhone,
+      equipmentType: savedQuoteData.equipmentType,
+      equipmentModel: savedQuoteData.equipmentModel,
+      equipmentAccessories: savedQuoteData.equipmentAccessories,
+      equipmentPassword: savedQuoteData.equipmentPassword,
+      diagnostics: savedQuoteData.diagnostics,
+      services: JSON.stringify(savedQuoteData.services),
+      technicianName: savedQuoteData.technicianName,
+      createdAt: new Date(),
+    };
+
+    this.savedQuotes.set(savedQuote.id, savedQuote);
+    return savedQuote;
+  }
+
+  async getAllSavedQuotes(): Promise<SavedQuote[]> {
+    return Array.from(this.savedQuotes.values());
+  }
+
+  async deleteSavedQuote(id: number): Promise<boolean> {
+    return this.savedQuotes.delete(id);
   }
 }
 

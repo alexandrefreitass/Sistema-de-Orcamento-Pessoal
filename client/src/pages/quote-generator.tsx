@@ -3,14 +3,16 @@ import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import QuoteForm from "@/components/quote-form";
 import QuotePreview from "@/components/quote-preview";
+import SavedQuotesList from "@/components/saved-quotes-list";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Edit3 } from "lucide-react";
+import { FileText, Edit3, Save } from "lucide-react";
 import type { QuoteFormData } from "@shared/schema";
 
 export default function QuoteGenerator() {
   const { id } = useParams();
   const [quoteData, setQuoteData] = useState<QuoteFormData | null>(null);
+  const [loadedData, setLoadedData] = useState<QuoteFormData | undefined>(undefined);
   const [activeTab, setActiveTab] = useState("form");
 
   // Load existing quote if ID is provided
@@ -22,6 +24,13 @@ export default function QuoteGenerator() {
   const handleQuoteSubmit = (data: QuoteFormData) => {
     setQuoteData(data);
     setActiveTab("preview");
+  };
+
+  const handleLoadQuote = (data: QuoteFormData) => {
+    setLoadedData(data);
+    setActiveTab("form");
+    // Clear loadedData after a short delay to avoid re-triggering
+    setTimeout(() => setLoadedData(undefined), 100);
   };
 
   if (isLoading) {
@@ -50,7 +59,7 @@ export default function QuoteGenerator() {
         <Card className="max-w-6xl mx-auto">
           <CardContent className="p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsList className="grid w-full grid-cols-3 mb-6">
                 <TabsTrigger value="form" className="flex items-center gap-2">
                   <Edit3 className="h-4 w-4" />
                   Formulário
@@ -59,11 +68,16 @@ export default function QuoteGenerator() {
                   <FileText className="h-4 w-4" />
                   Visualizar
                 </TabsTrigger>
+                <TabsTrigger value="saved" className="flex items-center gap-2">
+                  <Save className="h-4 w-4" />
+                  Salvos
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="form">
                 <QuoteForm 
                   onSubmit={handleQuoteSubmit}
+                  loadedData={loadedData}
                   initialData={existingQuote ? {
                     serviceOrder: existingQuote.serviceOrder,
                     date: existingQuote.date,
@@ -107,6 +121,26 @@ export default function QuoteGenerator() {
                     </p>
                   </div>
                 )}
+              </TabsContent>
+
+              <TabsContent value="saved">
+                <SavedQuotesList 
+                  onLoadQuote={handleLoadQuote}
+                  currentQuoteData={quoteData || (existingQuote ? {
+                    serviceOrder: existingQuote.serviceOrder,
+                    date: existingQuote.date,
+                    companyWhatsapp: existingQuote.companyWhatsapp,
+                    clientName: existingQuote.clientName,
+                    clientPhone: existingQuote.clientPhone,
+                    equipmentType: existingQuote.equipmentType,
+                    equipmentModel: existingQuote.equipmentModel,
+                    equipmentAccessories: existingQuote.equipmentAccessories,
+                    equipmentPassword: existingQuote.equipmentPassword,
+                    diagnostics: existingQuote.diagnostics,
+                    services: JSON.parse(existingQuote.services),
+                    technicianName: existingQuote.technicianName,
+                  } : undefined)}
+                />
               </TabsContent>
             </Tabs>
           </CardContent>

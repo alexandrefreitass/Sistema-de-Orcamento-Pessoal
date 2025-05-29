@@ -74,6 +74,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Save a quote template
+  app.post("/api/saved-quotes", async (req, res) => {
+    try {
+      const validatedData = quoteFormSchema.parse(req.body);
+      const savedQuote = await storage.createSavedQuote(validatedData);
+      res.json(savedQuote);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Get all saved quotes
+  app.get("/api/saved-quotes", async (req, res) => {
+    try {
+      const savedQuotes = await storage.getAllSavedQuotes();
+      res.json(savedQuotes);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Delete a saved quote
+  app.delete("/api/saved-quotes/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteSavedQuote(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Orçamento salvo não encontrado" });
+      }
+      
+      res.json({ message: "Orçamento salvo excluído com sucesso" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

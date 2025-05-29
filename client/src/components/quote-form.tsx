@@ -1,6 +1,7 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,9 +16,10 @@ import { quoteFormSchema, type QuoteFormData } from "@shared/schema";
 interface QuoteFormProps {
   onSubmit: (data: QuoteFormData) => void;
   initialData?: QuoteFormData;
+  loadedData?: QuoteFormData;
 }
 
-export default function QuoteForm({ onSubmit, initialData }: QuoteFormProps) {
+export default function QuoteForm({ onSubmit, initialData, loadedData }: QuoteFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -83,6 +85,13 @@ export default function QuoteForm({ onSubmit, initialData }: QuoteFormProps) {
 
   const watchedServices = form.watch("services");
   const total = watchedServices.reduce((sum, service) => sum + (service.price || 0), 0);
+
+  // Handle loaded data from templates
+  useEffect(() => {
+    if (loadedData) {
+      form.reset(loadedData);
+    }
+  }, [loadedData, form]);
 
   return (
     <Form {...form}>
