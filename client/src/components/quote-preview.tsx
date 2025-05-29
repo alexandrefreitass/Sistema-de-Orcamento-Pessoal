@@ -73,33 +73,26 @@ export default function QuotePreview({ data }: QuotePreviewProps) {
       {/* Quote Document */}
       <div className="bg-white shadow-lg rounded-lg overflow-hidden print:shadow-none print:rounded-none">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-700 to-blue-600 text-white p-8">
-          <div className="flex justify-between items-start">
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
-                <img 
-                  src={logoPath} 
-                  alt="Logo" 
-                  className="w-12 h-12 object-contain"
-                />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">ORÇAMENTO</h1>
-                <p className="text-blue-100">Assistência Técnica - Ordem de Serviço</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-sm text-blue-100">Data</div>
-              <div className="font-semibold">{data.date}</div>
-              <div className="text-sm text-blue-100 mt-2">
-                <i className="fab fa-whatsapp mr-2"></i>
-                {formatPhone(data.companyWhatsapp)}
-              </div>
-            </div>
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8 border-b pb-6 p-8">
+          <div className="flex flex-col items-center md:items-start mb-4 md:mb-0">
+            {/* Logo da empresa */}
+            <img 
+              src={logoPath} 
+              alt="Logo" 
+              className="w-24 h-24 mb-2 object-contain" 
+            />
+            <p className="text-sm text-gray-600">Oasis Tecnologia</p>
           </div>
-          <div className="mt-4 text-right">
-            <span className="text-blue-100">OS:</span>
-            <span className="font-bold text-lg ml-2">{data.serviceOrder}</span>
+          <div className="text-center md:text-right">
+            <h1 className="text-2xl font-bold text-gray-800">ORÇAMENTO</h1>
+            <p className="text-gray-600">Ordem de Serviço: <span className="font-semibold">{data.serviceOrder}</span></p>
+            <p className="text-gray-600">Data: <span className="font-semibold">{data.date}</span></p>
+            <div className="flex items-center justify-center md:justify-end mt-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+              <span className="text-gray-700">{formatPhone(data.companyWhatsapp)}</span>
+            </div>
           </div>
         </div>
 
