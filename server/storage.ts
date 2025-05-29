@@ -1,4 +1,7 @@
+
 import { quotes, savedQuotes, type Quote, type SavedQuote, type InsertQuote, type QuoteFormData, type SavedQuoteFormData } from "@shared/schema";
+import { promises as fs } from "fs";
+import path from "path";
 
 export interface IStorage {
   createQuote(quoteData: QuoteFormData): Promise<Quote>;
@@ -11,24 +14,68 @@ export interface IStorage {
   deleteSavedQuote(id: number): Promise<boolean>;
 }
 
-export class MemStorage implements IStorage {
-  private quotes: Map<number, Quote>;
-  private savedQuotes: Map<number, SavedQuote>;
-  private currentId: number;
-  private currentSavedId: number;
+export class FileStorage implements IStorage {
+  private quotesFilePath: string;
+  private savedQuotesFilePath: string;
+  private dataDir: string;
 
   constructor() {
-    this.quotes = new Map();
-    this.savedQuotes = new Map();
-    this.currentId = 1;
-    this.currentSavedId = 1;
+    this.dataDir = path.join(process.cwd(), 'data');
+    this.quotesFilePath = path.join(this.dataDir, 'quotes.json');
+    this.savedQuotesFilePath = path.join(this.dataDir, 'saved-quotes.json');
+    this.ensureDataDir();
+  }
+
+  private async ensureDataDir(): Promise<void> {
+    try {
+      await fs.access(this.dataDir);
+    } catch {
+      await fs.mkdir(this.dataDir, { recursive: true });
+    }
+  }
+
+  private async loadQuotes(): Promise<{ quotes: Quote[], nextId: number }> {
+    try {
+      const data = await fs.readFile(this.quotesFilePath, 'utf-8');
+      const parsed = JSON.parse(data);
+      return {
+        quotes: parsed.quotes || [],
+        nextId: parsed.nextId || 1
+      };
+    } catch {
+      return { quotes: [], nextId: 1 };
+    }
+  }
+
+  private async saveQuotes(quotes: Quote[], nextId: number): Promise<void> {
+    await this.ensureDataDir();
+    await fs.writeFile(this.quotesFilePath, JSON.stringify({ quotes, nextId }, null, 2));
+  }
+
+  private async loadSavedQuotes(): Promise<{ savedQuotes: SavedQuote[], nextId: number }> {
+    try {
+      const data = await fs.readFile(this.savedQuotesFilePath, 'utf-8');
+      const parsed = JSON.parse(data);
+      return {
+        savedQuotes: parsed.savedQuotes || [],
+        nextId: parsed.nextId || 1
+      };
+    } catch {
+      return { savedQuotes: [], nextId: 1 };
+    }
+  }
+
+  private async saveSavedQuotes(savedQuotes: SavedQuote[], nextId: number): Promise<void> {
+    await this.ensureDataDir();
+    await fs.writeFile(this.savedQuotesFilePath, JSON.stringify({ savedQuotes, nextId }, null, 2));
   }
 
   async createQuote(quoteData: QuoteFormData): Promise<Quote> {
+    const { quotes, nextId } = await this.loadQuotes();
     const total = quoteData.services.reduce((sum, service) => sum + service.price, 0);
     
     const quote: Quote = {
-      id: this.currentId++,
+      id: nextId,
       serviceOrder: quoteData.serviceOrder,
       date: quoteData.date,
       companyWhatsapp: quoteData.companyWhatsapp,
@@ -45,22 +92,28 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
     };
 
-    this.quotes.set(quote.id, quote);
+    quotes.push(quote);
+    await this.saveQuotes(quotes, nextId + 1);
     return quote;
   }
 
   async getQuote(id: number): Promise<Quote | undefined> {
-    return this.quotes.get(id);
+    const { quotes } = await this.loadQuotes();
+    return quotes.find(quote => quote.id === id);
   }
 
   async getAllQuotes(): Promise<Quote[]> {
-    return Array.from(this.quotes.values());
+    const { quotes } = await this.loadQuotes();
+    return quotes;
   }
 
   async updateQuote(id: number, quoteData: Partial<QuoteFormData>): Promise<Quote | undefined> {
-    const existingQuote = this.quotes.get(id);
-    if (!existingQuote) return undefined;
+    const { quotes, nextId } = await this.loadQuotes();
+    const quoteIndex = quotes.findIndex(quote => quote.id === id);
+    
+    if (quoteIndex === -1) return undefined;
 
+    const existingQuote = quotes[quoteIndex];
     const total = quoteData.services 
       ? quoteData.services.reduce((sum, service) => sum + service.price, 0)
       : parseFloat(existingQuote.total);
@@ -72,17 +125,27 @@ export class MemStorage implements IStorage {
       total: total.toString(),
     };
 
-    this.quotes.set(id, updatedQuote);
+    quotes[quoteIndex] = updatedQuote;
+    await this.saveQuotes(quotes, nextId);
     return updatedQuote;
   }
 
   async deleteQuote(id: number): Promise<boolean> {
-    return this.quotes.delete(id);
+    const { quotes, nextId } = await this.loadQuotes();
+    const initialLength = quotes.length;
+    const filteredQuotes = quotes.filter(quote => quote.id !== id);
+    
+    if (filteredQuotes.length === initialLength) return false;
+    
+    await this.saveQuotes(filteredQuotes, nextId);
+    return true;
   }
 
   async createSavedQuote(savedQuoteData: SavedQuoteFormData): Promise<SavedQuote> {
+    const { savedQuotes, nextId } = await this.loadSavedQuotes();
+    
     const savedQuote: SavedQuote = {
-      id: this.currentSavedId++,
+      id: nextId,
       name: savedQuoteData.name,
       serviceOrder: savedQuoteData.serviceOrder,
       date: savedQuoteData.date,
@@ -99,17 +162,26 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
     };
 
-    this.savedQuotes.set(savedQuote.id, savedQuote);
+    savedQuotes.push(savedQuote);
+    await this.saveSavedQuotes(savedQuotes, nextId + 1);
     return savedQuote;
   }
 
   async getAllSavedQuotes(): Promise<SavedQuote[]> {
-    return Array.from(this.savedQuotes.values());
+    const { savedQuotes } = await this.loadSavedQuotes();
+    return savedQuotes;
   }
 
   async deleteSavedQuote(id: number): Promise<boolean> {
-    return this.savedQuotes.delete(id);
+    const { savedQuotes, nextId } = await this.loadSavedQuotes();
+    const initialLength = savedQuotes.length;
+    const filteredSavedQuotes = savedQuotes.filter(savedQuote => savedQuote.id !== id);
+    
+    if (filteredSavedQuotes.length === initialLength) return false;
+    
+    await this.saveSavedQuotes(filteredSavedQuotes, nextId);
+    return true;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new FileStorage();
