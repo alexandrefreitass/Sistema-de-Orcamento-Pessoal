@@ -1,13 +1,8 @@
+
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { formatCurrency } from './quote-utils';
 import type { QuoteFormData } from '@shared/schema';
-
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-  }
-}
 
 export async function generatePDF(data: QuoteFormData): Promise<void> {
   const doc = new jsPDF();
@@ -128,7 +123,7 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
 
   tableData.push(['TOTAL', formatCurrency(total)]);
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: yPosition,
     head: [['Serviço', 'Valor']],
     body: tableData,
