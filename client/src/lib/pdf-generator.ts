@@ -18,14 +18,47 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.setFillColor(29, 78, 216); // Blue color
   doc.rect(0, 0, pageWidth, 60, 'F');
   
+  // Try to add logo
+  try {
+    const logoImg = new Image();
+    logoImg.crossOrigin = "anonymous";
+    
+    await new Promise((resolve, reject) => {
+      logoImg.onload = () => {
+        try {
+          // Create canvas to convert image
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = logoImg.width;
+          canvas.height = logoImg.height;
+          ctx?.drawImage(logoImg, 0, 0);
+          
+          const logoDataUrl = canvas.toDataURL('image/png');
+          doc.addImage(logoDataUrl, 'PNG', margin, 10, 30, 20);
+          resolve(true);
+        } catch (err) {
+          console.warn('Erro ao processar logo:', err);
+          resolve(true); // Continue without logo
+        }
+      };
+      logoImg.onerror = () => {
+        console.warn('Logo não encontrado, continuando sem logo');
+        resolve(true); // Continue without logo
+      };
+      logoImg.src = '/assets/logo.png';
+    });
+  } catch (err) {
+    console.warn('Erro ao carregar logo:', err);
+  }
+  
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
-  doc.text('ORÇAMENTO', margin, 25);
+  doc.text('ORÇAMENTO', margin + 35, 25);
   
   doc.setFontSize(12);
   doc.setFont('helvetica', 'normal');
-  doc.text('Assistência Técnica - Ordem de Serviço', margin, 35);
+  doc.text('Assistência Técnica - Ordem de Serviço', margin + 35, 35);
   
   // Date and Service Order
   doc.text(`Data: ${data.date}`, pageWidth - 80, 25);

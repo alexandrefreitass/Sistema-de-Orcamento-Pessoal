@@ -26,9 +26,10 @@ export default function QuotePreview({ data }: QuotePreviewProps) {
         description: "O arquivo foi baixado com sucesso.",
       });
     } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
       toast({
-        title: "Erro",
-        description: "Erro ao gerar PDF. Tente novamente.",
+        title: "Erro ao gerar PDF",
+        description: "Não foi possível gerar o PDF. Verifique os dados e tente novamente.",
         variant: "destructive",
       });
     }
