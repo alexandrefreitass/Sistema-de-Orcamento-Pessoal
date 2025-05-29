@@ -42,7 +42,7 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
     console.warn('Erro ao carregar logo:', err);
   }
 
-  // Header direito
+  // Header direito - com espaçamento reduzido e uniforme
   const rightContentX = pageWidth - margin;
   
   // Texto de orçamento
@@ -51,7 +51,7 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.setFont('helvetica', 'bold');
   doc.text('ORÇAMENTO', rightContentX, yPosition + 8, { align: 'right' });
   
-  // Ordem de Serviço
+  // Ordem de Serviço - espaçamento reduzido
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(107, 114, 128);
@@ -62,27 +62,27 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.setTextColor(31, 41, 55);
   doc.text(data.serviceOrder, rightContentX, yPosition + 16, { align: 'right' });
   
-  // Data
+  // Data - espaçamento reduzido
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(107, 114, 128);
   const dateText = 'Data: ';
   const dateWidth = doc.getTextWidth(dateText);
-  doc.text(dateText, rightContentX - dateWidth - doc.getTextWidth(data.date), yPosition + 24);
+  doc.text(dateText, rightContentX - dateWidth - doc.getTextWidth(data.date), yPosition + 22);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(31, 41, 55);
-  doc.text(data.date, rightContentX, yPosition + 24, { align: 'right' });
+  doc.text(data.date, rightContentX, yPosition + 22, { align: 'right' });
 
-  // WhatsApp
+  // WhatsApp - espaçamento reduzido
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(34, 197, 94);
-  doc.text(formatPhone(data.companyWhatsapp), rightContentX, yPosition + 34, { align: 'right' });
+  doc.text(formatPhone(data.companyWhatsapp), rightContentX, yPosition + 28, { align: 'right' });
 
   // Linha de separação
-  yPosition += 40;
+  yPosition += 34;
   doc.setDrawColor(229, 231, 235);
   doc.setLineWidth(0.5);
   doc.line(margin, yPosition, pageWidth - margin, yPosition);
-  yPosition += 12;
+  yPosition += 10;
 
   // Seções Cliente e Equipamento
   const sectionWidth = (pageWidth - 3 * margin) / 2;
@@ -114,7 +114,7 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.setTextColor(17, 24, 39);
   doc.text(formatPhone(data.clientPhone), margin + 5, yPosition + 31);
 
-  // Seção Equipamento
+  // Seção Equipamento - com tratamento melhor de texto
   const rightSectionX = margin + sectionWidth + sectionGap;
   doc.setFillColor(249, 250, 251);
   doc.roundedRect(rightSectionX, yPosition, sectionWidth, 35, 3, 3, 'F');
@@ -124,7 +124,24 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.setFont('helvetica', 'bold');
   doc.text('Dados do Equipamento', rightSectionX + 5, yPosition + 8);
   
-  // Campos do equipamento
+  // Função para truncar texto adequadamente
+  function truncateText(text: string, maxWidth: number, fontSize: number): string {
+    doc.setFontSize(fontSize);
+    const textWidth = doc.getTextWidth(text);
+    if (textWidth <= maxWidth) {
+      return text;
+    }
+    
+    let truncated = text;
+    while (doc.getTextWidth(truncated + '...') > maxWidth && truncated.length > 0) {
+      truncated = truncated.slice(0, -1);
+    }
+    return truncated + '...';
+  }
+  
+  // Campos do equipamento com truncamento adequado
+  const fieldWidth = (sectionWidth - 10) / 2 - 5;
+  
   doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(75, 85, 99);
@@ -132,14 +149,14 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.text('Equipamento:', rightSectionX + 5, yPosition + 16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(17, 24, 39);
-  doc.text(data.equipmentType.substring(0, 15) + '...', rightSectionX + 5, yPosition + 20);
+  doc.text(truncateText(data.equipmentType, fieldWidth, 7), rightSectionX + 5, yPosition + 20);
   
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(75, 85, 99);
   doc.text('Modelo:', rightSectionX + 5, yPosition + 27);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(17, 24, 39);
-  doc.text(data.equipmentModel.substring(0, 15) + '...', rightSectionX + 5, yPosition + 31);
+  doc.text(truncateText(data.equipmentModel, fieldWidth, 7), rightSectionX + 5, yPosition + 31);
   
   const rightCol = rightSectionX + sectionWidth/2 + 5;
   doc.setFont('helvetica', 'normal');
@@ -147,7 +164,7 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.text('Acessórios:', rightCol, yPosition + 16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(17, 24, 39);
-  doc.text(data.equipmentAccessories.substring(0, 12) + '...', rightCol, yPosition + 20);
+  doc.text(truncateText(data.equipmentAccessories || 'N/A', fieldWidth, 7), rightCol, yPosition + 20);
   
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(75, 85, 99);
@@ -156,7 +173,7 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.setTextColor(17, 24, 39);
   doc.text(data.equipmentPassword || 'N/A', rightCol, yPosition + 31);
 
-  yPosition += 35 + 12;
+  yPosition += 35 + 10;
 
   // Seção Diagnóstico
   doc.setTextColor(31, 41, 55);
@@ -165,23 +182,24 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.text('Diagnóstico / Problema', margin, yPosition);
   yPosition += 8;
 
-  // Box do diagnóstico
+  // Box do diagnóstico - barra vermelha mais estreita
   const diagnosticsHeight = Math.max(data.diagnostics.length * 4 + 8, 15);
   doc.setFillColor(254, 242, 242);
   doc.roundedRect(margin, yPosition, pageWidth - 2 * margin, diagnosticsHeight, 0, 3, 'F');
   
+  // Barra vermelha mais estreita
   doc.setFillColor(248, 113, 113);
-  doc.rect(margin, yPosition, 2, diagnosticsHeight, 'F');
+  doc.rect(margin, yPosition, 1, diagnosticsHeight, 'F');
 
-  // Conteúdo do diagnóstico
+  // Conteúdo do diagnóstico - sem bullets
   doc.setTextColor(55, 65, 81);
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   data.diagnostics.forEach((diagnostic, index) => {
-    doc.text(`• ${diagnostic}`, margin + 8, yPosition + 6 + (index * 4));
+    doc.text(diagnostic, margin + 6, yPosition + 6 + (index * 4));
   });
 
-  yPosition += diagnosticsHeight + 12;
+  yPosition += diagnosticsHeight + 10;
 
   // Seção Serviços
   doc.setTextColor(31, 41, 55);
@@ -190,7 +208,7 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.text('Procedimentos Realizados', margin, yPosition);
   yPosition += 8;
 
-  // Tabela de serviços
+  // Tabela de serviços - com bordas suaves e cores mais leves
   const total = data.services.reduce((sum, service) => sum + service.price, 0);
   
   const tableData = data.services.map(service => [
@@ -207,22 +225,21 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
     styles: {
       font: 'helvetica',
       fontSize: 9,
-      cellPadding: 2,
+      cellPadding: 3,
     },
     headStyles: {
-      fillColor: [37, 99, 235],
+      fillColor: [59, 130, 246], // Azul mais suave
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 10,
-      halign: 'left'
     },
     bodyStyles: {
       textColor: [0, 0, 0],
       fillColor: [255, 255, 255]
     },
     footStyles: {
-      fillColor: [243, 244, 246],
-      textColor: [37, 99, 235],
+      fillColor: [248, 250, 252], // Cinza mais claro
+      textColor: [59, 130, 246],
       fontStyle: 'bold',
       fontSize: 11
     },
@@ -239,13 +256,16 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
     },
     margin: { left: margin, right: margin },
     alternateRowStyles: {
-      fillColor: [249, 250, 251]
+      fillColor: [249, 250, 251] // Cinza muito claro
     },
-    tableLineColor: [229, 231, 235],
-    tableLineWidth: 0.3
+    tableLineColor: [203, 213, 225], // Bordas mais suaves
+    tableLineWidth: 0.2, // Bordas mais finas
+    didDrawPage: function(data) {
+      // Adicionar bordas arredondadas manualmente se possível
+    }
   });
 
-  yPosition = (doc as any).lastAutoTable.finalY + 12;
+  yPosition = (doc as any).lastAutoTable.finalY + 10;
 
   // Seção Garantia
   const warrantyHeight = 12;
@@ -257,7 +277,14 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.setTextColor(0, 0, 0);
   doc.text('GARANTIA DE 30 DIAS DOS SERVIÇOS PRESTADOS', pageWidth / 2, yPosition + 8, { align: 'center' });
   
-  yPosition += warrantyHeight + 15;
+  yPosition += warrantyHeight + 10;
+
+  // Verificar se há espaço suficiente para as assinaturas
+  const remainingSpace = doc.internal.pageSize.height - yPosition - margin;
+  if (remainingSpace < 25) {
+    doc.addPage();
+    yPosition = margin;
+  }
 
   // Seções de Assinatura
   doc.setFontSize(8);
@@ -289,4 +316,3 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   // Salvar o PDF
   doc.save(`Orcamento_${data.serviceOrder}_${data.clientName.replace(/\s+/g, '_')}.pdf`);
 }
-
