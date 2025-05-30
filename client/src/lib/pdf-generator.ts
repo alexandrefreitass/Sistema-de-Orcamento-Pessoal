@@ -253,83 +253,72 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
     formatCurrency(service.price)
   ]);
 
-  // Desenhar tabela customizada com bordas arredondadas
-  const tableX = margin;
-  const tableWidth = pageWidth - 2 * margin;
-  const headerHeight = 12;
-  const rowHeight = 8;
-  const totalRowHeight = 10;
-  
-  // Header da tabela com bordas arredondadas superiores
-  doc.setFillColor(59, 130, 246);
-  doc.roundedRect(tableX, yPosition, tableWidth, headerHeight, 3, 3, 'F');
-  
-  // Texto do header
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Serviço', tableX + 6, yPosition + 8);
-  doc.text('Valor', tableX + tableWidth - 6, yPosition + 8, { align: 'right' });
-  
-  let currentY = yPosition + headerHeight;
-  
-  // Linhas do corpo da tabela
-  data.services.forEach((service, index) => {
-    // Cor alternada para as linhas
-    if (index % 2 === 1) {
-      doc.setFillColor(249, 250, 251);
-      doc.rect(tableX, currentY, tableWidth, rowHeight, 'F');
-    }
-    
-    // Texto das linhas
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text(service.name, tableX + 6, currentY + 6);
-    doc.setFont('helvetica', 'bold');
-    doc.text(formatCurrency(service.price), tableX + tableWidth - 6, currentY + 6, { align: 'right' });
-    
-    currentY += rowHeight;
+  autoTable(doc, {
+    startY: yPosition,
+    head: [['Serviço', 'Valor']],
+    body: tableData,
+    foot: [['TOTAL', formatCurrency(total)]],
+    theme: 'grid',
+    styles: {
+      font: 'helvetica',
+      fontSize: 9,
+      cellPadding: 2,
+    },
+    headStyles: {
+      fillColor: [59, 130, 246],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 10,
+      halign: 'left', // deixa padrão
+    },
+    bodyStyles: {
+      textColor: [0, 0, 0],
+      fillColor: [255, 255, 255]
+    },
+    footStyles: {
+      fillColor: [255, 255, 255], // branco igual ao restante da tabela
+      textColor: [59, 130, 246],  // mantém azul do TOTAL
+      fontStyle: 'bold',
+      fontSize: 11,
+      halign: 'left'
+    },
+    columnStyles: {
+      0: { 
+        cellWidth: (pageWidth - 2 * margin) * 0.7,
+        halign: 'left'
+      },
+      1: { 
+        cellWidth: (pageWidth - 2 * margin) * 0.3,
+        halign: 'right',
+        fontStyle: 'normal'
+      }
+    },
+    didParseCell: function (data) {
+      // Alinha o cabeçalho "Valor" à direita
+      if (data.section === 'head' && data.column.index === 1) {
+        data.cell.styles.halign = 'right';
+      }
+      // Alinha o valor total à direita
+      if (data.section === 'foot' && data.column.index === 1) {
+        data.cell.styles.halign = 'right';
+      }
+      // Garante que "Serviço" e "TOTAL" fiquem à esquerda
+      if (data.section === 'head' && data.column.index === 0) {
+        data.cell.styles.halign = 'left';
+      }
+      if (data.section === 'foot' && data.column.index === 0) {
+        data.cell.styles.halign = 'left';
+      }
+    },
+    margin: { left: margin, right: margin },
+    alternateRowStyles: {
+      fillColor: [249, 250, 251]
+    },
+    tableLineColor: [203, 213, 225],
+    tableLineWidth: 0.2,
   });
-  
-  // Linha do total com design moderno
-  const totalY = currentY;
-  
-  // Fundo gradiente para o total
-  doc.setFillColor(239, 246, 255); // Azul muito claro
-  doc.roundedRect(tableX, totalY, tableWidth, totalRowHeight, 0, 0, 'F');
-  
-  // Borda superior mais escura para separar
-  doc.setDrawColor(59, 130, 246);
-  doc.setLineWidth(1);
-  doc.line(tableX, totalY, tableX + tableWidth, totalY);
-  
-  // Texto do total
-  doc.setTextColor(59, 130, 246);
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
-  doc.text('TOTAL', tableX + 6, totalY + 7);
-  doc.setFontSize(14);
-  doc.text(formatCurrency(total), tableX + tableWidth - 6, totalY + 7, { align: 'right' });
-  
-  // Bordas arredondadas externas da tabela
-  doc.setDrawColor(203, 213, 225);
-  doc.setLineWidth(0.5);
-  doc.setFillColor(255, 255, 255);
-  doc.roundedRect(tableX, yPosition, tableWidth, currentY - yPosition + totalRowHeight, 3, 3, 'S');
-  
-  // Bordas internas horizontais (exceto a última que já foi desenhada)
-  doc.setDrawColor(229, 231, 235);
-  doc.setLineWidth(0.3);
-  let lineY = yPosition + headerHeight;
-  for (let i = 0; i < data.services.length; i++) {
-    if (i > 0) {
-      doc.line(tableX + 3, lineY, tableX + tableWidth - 3, lineY);
-    }
-    lineY += rowHeight;
-  }
 
-  yPosition = currentY + totalRowHeight + 6;
+  yPosition = (doc as any).lastAutoTable.finalY + 6;
 
   // Verificar se há espaço suficiente para garantia e assinaturas
   const remainingSpace = doc.internal.pageSize.height - yPosition - margin;
