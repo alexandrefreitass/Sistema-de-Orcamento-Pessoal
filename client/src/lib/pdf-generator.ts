@@ -315,17 +315,35 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
       fillColor: [249, 250, 251]
     },
     tableLineColor: [203, 213, 225],
-    tableLineWidth: 0.2,
-    didDrawPage: function (data) {
-      // Adicionar borda externa arredondada sutil na tabela
-      const tableStart = data.table.startPageY;
-      const tableEnd = data.table.finalY;
-      const tableLeft = data.table.settings.margin.left;
-      const tableRight = doc.internal.pageSize.width - data.table.settings.margin.right;
-      
-      doc.setDrawColor(203, 213, 225);
-      doc.setLineWidth(0.1);
-      doc.roundedRect(tableLeft, tableStart, tableRight - tableLeft, tableEnd - tableStart, 3, 3, 'S');
+    tableLineWidth: 0.3,
+    didDrawCell: function (data) {
+      // Aplicar cantos arredondados apenas nas células externas
+      if (data.section === 'head' || data.section === 'foot') {
+        const { x, y, width, height } = data.cell;
+        doc.setDrawColor(203, 213, 225);
+        doc.setLineWidth(0.3);
+        
+        // Cantos arredondados apenas para células do cabeçalho e rodapé
+        if (data.section === 'head') {
+          if (data.column.index === 0) {
+            // Primeiro cabeçalho - canto superior esquerdo
+            doc.roundedRect(x, y, width, height, 2, 0, 'S');
+          } else if (data.column.index === data.table.columns.length - 1) {
+            // Último cabeçalho - canto superior direito  
+            doc.roundedRect(x, y, width, height, 0, 2, 'S');
+          }
+        }
+        
+        if (data.section === 'foot') {
+          if (data.column.index === 0) {
+            // Primeiro rodapé - canto inferior esquerdo
+            doc.roundedRect(x, y, width, height, 0, 0, 'S');
+          } else if (data.column.index === data.table.columns.length - 1) {
+            // Último rodapé - canto inferior direito
+            doc.roundedRect(x, y, width, height, 0, 0, 'S');
+          }
+        }
+      }
     }
   });
 
