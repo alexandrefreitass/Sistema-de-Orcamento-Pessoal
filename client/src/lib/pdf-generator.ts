@@ -245,7 +245,7 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
   doc.text('Procedimentos Realizados', margin, yPosition);
   yPosition += 6;
 
-  // Tabela de serviços - modernizada com bordas arredondadas
+  // Tabela de serviços - com bordas suaves e cores mais leves
   const total = data.services.reduce((sum, service) => sum + service.price, 0);
   
   const tableData = data.services.map(service => [
@@ -262,30 +262,25 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
     styles: {
       font: 'helvetica',
       fontSize: 9,
-      cellPadding: 3,
-      lineColor: [229, 231, 235],
-      lineWidth: 0.1,
+      cellPadding: 2,
     },
     headStyles: {
-      fillColor: [248, 250, 252],
-      textColor: [31, 41, 55],
+      fillColor: [59, 130, 246],
+      textColor: [255, 255, 255],
       fontStyle: 'bold',
-      fontSize: 12,
-      halign: 'left',
+      fontSize: 10,
+      halign: 'left', // deixa padrão
     },
     bodyStyles: {
-      textColor: [55, 65, 81],
-      fillColor: [255, 255, 255],
-      fontSize: 9,
+      textColor: [0, 0, 0],
+      fillColor: [255, 255, 255]
     },
     footStyles: {
-      fillColor: [248, 250, 252],
-      textColor: [59, 130, 246],
+      fillColor: [255, 255, 255], // branco igual ao restante da tabela
+      textColor: [59, 130, 246],  // mantém azul do TOTAL
       fontStyle: 'bold',
       fontSize: 11,
-      halign: 'left',
-      lineColor: [59, 130, 246],
-      lineWidth: 0.3,
+      halign: 'left'
     },
     columnStyles: {
       0: { 
@@ -295,44 +290,32 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
       1: { 
         cellWidth: (pageWidth - 2 * margin) * 0.3,
         halign: 'right',
+        fontStyle: 'normal'
       }
     },
     didParseCell: function (data) {
-      // Cabeçalhos com alinhamento correto
-      if (data.section === 'head') {
-        if (data.column.index === 0) {
-          data.cell.styles.halign = 'left';
-        } else if (data.column.index === 1) {
-          data.cell.styles.halign = 'right';
-        }
+      // Alinha o cabeçalho "Valor" à direita
+      if (data.section === 'head' && data.column.index === 1) {
+        data.cell.styles.halign = 'right';
       }
-      
-      // Rodapé TOTAL com destaque
-      if (data.section === 'foot') {
-        if (data.column.index === 0) {
-          data.cell.styles.halign = 'left';
-        } else if (data.column.index === 1) {
-          data.cell.styles.halign = 'right';
-        }
+      // Alinha o valor total à direita
+      if (data.section === 'foot' && data.column.index === 1) {
+        data.cell.styles.halign = 'right';
       }
-    },
-    didDrawPage: function (data) {
-      // Adicionar bordas arredondadas à tabela completa
-      const tableStartY = yPosition;
-      const tableEndY = data.cursor.y;
-      const tableWidth = pageWidth - 2 * margin;
-      
-      // Desenhar contorno arredondado sobre a tabela
-      doc.setDrawColor(203, 213, 225);
-      doc.setLineWidth(0.3);
-      doc.roundedRect(margin, tableStartY, tableWidth, tableEndY - tableStartY, 3, 3, 'S');
+      // Garante que "Serviço" e "TOTAL" fiquem à esquerda
+      if (data.section === 'head' && data.column.index === 0) {
+        data.cell.styles.halign = 'left';
+      }
+      if (data.section === 'foot' && data.column.index === 0) {
+        data.cell.styles.halign = 'left';
+      }
     },
     margin: { left: margin, right: margin },
     alternateRowStyles: {
       fillColor: [249, 250, 251]
     },
-    tableLineColor: [229, 231, 235],
-    tableLineWidth: 0.1,
+    tableLineColor: [203, 213, 225],
+    tableLineWidth: 0.2,
   });
 
   yPosition = (doc as any).lastAutoTable.finalY + 6;
