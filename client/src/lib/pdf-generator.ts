@@ -317,31 +317,30 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
     tableLineColor: [203, 213, 225],
     tableLineWidth: 0.2,
     didDrawCell: function (data) {
-      // Aplicar cantos arredondados apenas nas células externas
-      if (data.section === 'head' || data.section === 'foot') {
-        const { x, y, width, height } = data.cell;
+      // Aplicar cantos arredondados nas bordas externas da tabela
+      const { x, y, width, height } = data.cell;
+      const isFirstColumn = data.column.index === 0;
+      const isLastColumn = data.column.index === data.table.columns.length - 1;
+      const isFirstRow = data.section === 'head' || (data.section === 'body' && data.row.index === 0);
+      const isLastRow = data.section === 'foot' || (data.section === 'body' && data.row.index === data.table.body.length - 1);
+      
+      // Desenhar bordas arredondadas apenas nos cantos externos
+      if ((isFirstColumn && isFirstRow) || (isLastColumn && isFirstRow) || 
+          (isFirstColumn && isLastRow) || (isLastColumn && isLastRow)) {
+        
         doc.setDrawColor(203, 213, 225);
-        doc.setLineWidth(0.3);
+        doc.setLineWidth(0.2);
         
-        // Cantos arredondados apenas para células do cabeçalho e rodapé
-        if (data.section === 'head') {
-          if (data.column.index === 0) {
-            // Primeiro cabeçalho - canto superior esquerdo
-            doc.roundedRect(x, y, width, height, 2, 0, 'S');
-          } else if (data.column.index === data.table.columns.length - 1) {
-            // Último cabeçalho - canto superior direito  
-            doc.roundedRect(x, y, width, height, 0, 2, 'S');
-          }
-        }
+        let topLeftRadius = 0, topRightRadius = 0, bottomLeftRadius = 0, bottomRightRadius = 0;
         
-        if (data.section === 'foot') {
-          if (data.column.index === 0) {
-            // Primeiro rodapé - canto inferior esquerdo
-            doc.roundedRect(x, y, width, height, 0, 0, 'S');
-          } else if (data.column.index === data.table.columns.length - 1) {
-            // Último rodapé - canto inferior direito
-            doc.roundedRect(x, y, width, height, 0, 0, 'S');
-          }
+        if (isFirstColumn && data.section === 'head') topLeftRadius = 3;
+        if (isLastColumn && data.section === 'head') topRightRadius = 3;
+        if (isFirstColumn && data.section === 'foot') bottomLeftRadius = 3;
+        if (isLastColumn && data.section === 'foot') bottomRightRadius = 3;
+        
+        if (topLeftRadius || topRightRadius || bottomLeftRadius || bottomRightRadius) {
+          doc.roundedRect(x, y, width, height, 
+            topLeftRadius, topRightRadius, bottomRightRadius, bottomLeftRadius, 'S');
         }
       }
     }
