@@ -253,54 +253,34 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
     formatCurrency(service.price)
   ]);
 
-  // Desenhar fundo da tabela com bordas arredondadas manualmente
-  const tableX = margin;
-  const tableWidth = pageWidth - 2 * margin;
-  const headerHeight = 12;
-  const rowHeight = 8;
-  const footerHeight = 12;
-  const totalRows = tableData.length;
-  const totalTableHeight = headerHeight + (totalRows * rowHeight) + footerHeight;
-  
-  // Simular bordas arredondadas com linhas suaves
-  doc.setFillColor(255, 255, 255);
-  doc.setDrawColor(203, 213, 225);
-  doc.setLineWidth(0.5);
-  doc.rect(tableX, yPosition, tableWidth, totalTableHeight, 'FD');
-
   autoTable(doc, {
     startY: yPosition,
     head: [['Serviço', 'Valor']],
     body: tableData,
     foot: [['TOTAL', formatCurrency(total)]],
-    theme: 'plain',
+    theme: 'grid',
     styles: {
       font: 'helvetica',
       fontSize: 9,
-      cellPadding: 3,
-      lineColor: [240, 240, 240],
-      lineWidth: 0.1,
+      cellPadding: 2,
     },
     headStyles: {
       fillColor: [59, 130, 246],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
-      fontSize: 12, // Cabeçalhos maiores
-      halign: 'left',
-      cellPadding: 4,
+      fontSize: 10,
+      halign: 'left', // deixa padrão
     },
     bodyStyles: {
-      textColor: [31, 41, 55],
-      fillColor: [255, 255, 255],
-      fontSize: 9,
+      textColor: [0, 0, 0],
+      fillColor: [255, 255, 255]
     },
     footStyles: {
-      fillColor: [248, 250, 252], // Fundo suave para o TOTAL
-      textColor: [59, 130, 246],
+      fillColor: [255, 255, 255], // branco igual ao restante da tabela
+      textColor: [59, 130, 246],  // mantém azul do TOTAL
       fontStyle: 'bold',
       fontSize: 11,
-      halign: 'left',
-      cellPadding: 4,
+      halign: 'left'
     },
     columnStyles: {
       0: { 
@@ -329,25 +309,13 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
       if (data.section === 'foot' && data.column.index === 0) {
         data.cell.styles.halign = 'left';
       }
-      
-      // Remove bordas internas para um visual mais limpo
-      if (data.section === 'body') {
-        data.cell.styles.lineWidth = 0;
-      }
-    },
-    didDrawPage: function () {
-      // Adicionar linha destacada acima do rodapé TOTAL
-      const finalY = (doc as any).lastAutoTable.finalY;
-      const footerStartY = finalY - footerHeight;
-      
-      doc.setDrawColor(148, 163, 184);
-      doc.setLineWidth(0.8);
-      doc.line(tableX + 5, footerStartY, tableX + tableWidth - 5, footerStartY);
     },
     margin: { left: margin, right: margin },
     alternateRowStyles: {
       fillColor: [249, 250, 251]
     },
+    tableLineColor: [203, 213, 225],
+    tableLineWidth: 0.2,
   });
 
   yPosition = (doc as any).lastAutoTable.finalY + 6;
