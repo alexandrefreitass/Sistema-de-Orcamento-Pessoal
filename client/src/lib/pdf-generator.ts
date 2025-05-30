@@ -261,14 +261,14 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
     theme: 'grid',
     styles: {
       font: 'helvetica',
-      fontSize: 9,
-      cellPadding: 3,
+      fontSize: 8,
+      cellPadding: 2,
     },
     headStyles: {
       fillColor: [59, 130, 246],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
-      fontSize: 12, // cabeçalhos maiores
+      fontSize: 9,
       halign: 'left',
     },
     bodyStyles: {
@@ -276,10 +276,10 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
       fillColor: [255, 255, 255]
     },
     footStyles: {
-      fillColor: [248, 250, 252], // fundo suave para o TOTAL
+      fillColor: [248, 250, 252],
       textColor: [59, 130, 246],
       fontStyle: 'bold',
-      fontSize: 11,
+      fontSize: 9,
       halign: 'left'
     },
     columnStyles: {
