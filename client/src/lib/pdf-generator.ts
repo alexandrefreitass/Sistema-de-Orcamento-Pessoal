@@ -315,7 +315,7 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
       fillColor: [249, 250, 251]
     },
     tableLineColor: [203, 213, 225],
-    tableLineWidth: 0.3,
+    tableLineWidth: 0.2,
     didDrawCell: function (data) {
       // Aplicar cantos arredondados apenas nas células externas
       if (data.section === 'head' || data.section === 'foot') {
