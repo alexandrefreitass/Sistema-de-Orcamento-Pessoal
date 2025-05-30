@@ -262,22 +262,22 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
     styles: {
       font: 'helvetica',
       fontSize: 9,
-      cellPadding: 2,
+      cellPadding: 3,
     },
     headStyles: {
       fillColor: [59, 130, 246],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
-      fontSize: 10,
-      halign: 'left', // deixa padrão
+      fontSize: 12, // cabeçalhos maiores
+      halign: 'left',
     },
     bodyStyles: {
       textColor: [0, 0, 0],
       fillColor: [255, 255, 255]
     },
     footStyles: {
-      fillColor: [255, 255, 255], // branco igual ao restante da tabela
-      textColor: [59, 130, 246],  // mantém azul do TOTAL
+      fillColor: [248, 250, 252], // fundo suave para o TOTAL
+      textColor: [59, 130, 246],
       fontStyle: 'bold',
       fontSize: 11,
       halign: 'left'
@@ -315,7 +315,20 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
       fillColor: [249, 250, 251]
     },
     tableLineColor: [203, 213, 225],
-    tableLineWidth: 0.2,
+    tableLineWidth: 0.3,
+    didDrawPage: function (data) {
+      // Aplicar bordas arredondadas apenas na borda externa da tabela
+      const table = data.table;
+      const startY = table.startPageY;
+      const endY = table.finalY;
+      const startX = table.settings.margin.left;
+      const endX = doc.internal.pageSize.width - table.settings.margin.right;
+      
+      // Desenhar retângulo arredondado sobre a tabela
+      doc.setDrawColor(203, 213, 225);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(startX, startY, endX - startX, endY - startY, 2, 2, 'S');
+    }
   });
 
   yPosition = (doc as any).lastAutoTable.finalY + 6;
