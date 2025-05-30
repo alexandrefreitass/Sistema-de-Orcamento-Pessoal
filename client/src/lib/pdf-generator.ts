@@ -262,24 +262,24 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
     styles: {
       font: 'helvetica',
       fontSize: 9,
-      cellPadding: 4,
+      cellPadding: 2,
     },
     headStyles: {
-      fillColor: [71, 85, 105], // slate-600 - mais neutro
+      fillColor: [59, 130, 246],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
-      fontSize: 11, // um pouco maior
-      halign: 'left',
+      fontSize: 10,
+      halign: 'left', // deixa padrão
     },
     bodyStyles: {
-      textColor: [51, 65, 85], // slate-700
+      textColor: [0, 0, 0],
       fillColor: [255, 255, 255]
     },
     footStyles: {
-      fillColor: [248, 250, 252], // slate-50 - fundo muito sutil
-      textColor: [71, 85, 105], // slate-600 - mais neutro que o azul
+      fillColor: [255, 255, 255], // branco igual ao restante da tabela
+      textColor: [59, 130, 246],  // mantém azul do TOTAL
       fontStyle: 'bold',
-      fontSize: 12, // ligeiramente maior para destacar
+      fontSize: 11,
       halign: 'left'
     },
     columnStyles: {
@@ -301,7 +301,6 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
       // Alinha o valor total à direita
       if (data.section === 'foot' && data.column.index === 1) {
         data.cell.styles.halign = 'right';
-        data.cell.styles.fontStyle = 'bold';
       }
       // Garante que "Serviço" e "TOTAL" fiquem à esquerda
       if (data.section === 'head' && data.column.index === 0) {
@@ -313,23 +312,10 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
     },
     margin: { left: margin, right: margin },
     alternateRowStyles: {
-      fillColor: [248, 250, 252] // slate-50 - muito sutil
+      fillColor: [249, 250, 251]
     },
-    tableLineColor: [226, 232, 240], // slate-200 - mais suave
-    tableLineWidth: 0.3,
-    didDrawPage: function(data) {
-      // Adicionar bordas arredondadas apenas na borda externa da tabela
-      const tableStartY = data.table.startY;
-      const tableEndY = data.table.finalY;
-      const tableX = margin;
-      const tableWidth = pageWidth - 2 * margin;
-      
-      // Desenhar contorno arredondado sobre a tabela
-      doc.setDrawColor(226, 232, 240); // slate-200
-      doc.setLineWidth(0.8);
-      doc.setFillColor(255, 255, 255);
-      doc.roundedRect(tableX, tableStartY, tableWidth, tableEndY - tableStartY, 4, 4, 'S');
-    }
+    tableLineColor: [203, 213, 225],
+    tableLineWidth: 0.2,
   });
 
   yPosition = (doc as any).lastAutoTable.finalY + 6;
