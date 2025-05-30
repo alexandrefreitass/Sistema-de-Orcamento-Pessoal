@@ -317,19 +317,6 @@ export async function generatePDF(data: QuoteFormData): Promise<void> {
     },
     tableLineColor: [226, 232, 240], // slate-200 - mais suave
     tableLineWidth: 0.3,
-    didDrawPage: function(data) {
-      // Adicionar bordas arredondadas apenas na borda externa da tabela
-      const tableStartY = data.table.startY;
-      const tableEndY = data.table.finalY;
-      const tableX = margin;
-      const tableWidth = pageWidth - 2 * margin;
-      
-      // Desenhar contorno arredondado sobre a tabela
-      doc.setDrawColor(226, 232, 240); // slate-200
-      doc.setLineWidth(0.8);
-      doc.setFillColor(255, 255, 255);
-      doc.roundedRect(tableX, tableStartY, tableWidth, tableEndY - tableStartY, 4, 4, 'S');
-    }
   });
 
   yPosition = (doc as any).lastAutoTable.finalY + 6;
